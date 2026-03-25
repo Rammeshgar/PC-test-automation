@@ -1,0 +1,172 @@
+name: 10-Minute Smoke Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+
+permissions:
+  contents: write
+
+
+jobs:
+  run-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install Playwright Browsers
+        run: playwright install --with-deps chromium
+
+      - name: Run Smoke Test
+        id: test-step
+        continue-on-error: true
+        env:
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        run: python smoke_test.py
+
+      # --- Failure Logic starts here ---
+      - name: Create timestamp on failure
+        if: steps.test-step.outcome == 'failure'
+        run: echo "$(date -u +%s)" > failure_timestamp.txt
+
+      - name: Upload screenshots on failure
+        if: steps.test-step.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-smoke-test-screenshots
+          path: test_screenshots_smoke/
+
+      - name: Restore last email timestamp
+        if: steps.test-step.outcome == 'failure'
+        uses: actions/cache/restore@v4
+        with:
+          path: last_email_timestamp.txt
+          key: last-email-timestamp-smoke-test
+
+      # --- MODIFIED LOGIC: ONLY SEND BETWEEN 04:00 AND 16:00 ---
+      - name: Check if email should be sent
+        if: steps.test-step.outcome == 'failure'
+        id: time-check
+        run: |
+          should_send="false"
+          
+          # 1. Get Current Hour in UTC (0-23)
+          # 10# ensures bash treats "08" as number 8, not octal
+          current_hour=$(date -u +%H)
+          current_hour=$((10#$current_hour)) 
+          
+          echo "Current Hour (UTC): $current_hour"
+
+          # 2. Check Time Window: Only proceed if between 4 and 16 (4pm)
+          if (( current_hour >= 4 && current_hour < 16 )); then
+            echo "✅ Inside working hours (04:00 - 16:00). Checking cooldown..."
+
+            # 3. Check Cooldown (The 1 Hour Rule)
+            if [ ! -f last_email_timestamp.txt ]; then
+              echo "First failure recorded. Sending notification."
+              should_send="true"
+            else
+              last_email_time=$(cat last_email_timestamp.txt)
+              current_time=$(cat failure_timestamp.txt)
+              # Calculate difference
+              diff=$((current_time - last_email_time))
+              
+              if (( diff > 3600 )); then
+                echo "More than 1 hour ($diff seconds) since last email. Sending new one."
+                should_send="true"
+              else
+                echo "Skipping: Last email sent recently ($diff seconds ago)."
+              fi
+            fi
+
+          else
+            echo "⛔ Outside working hours (Current: $current_hour, Window: 4-16). Email suppressed."
+            should_send="false"
+          fi
+
+          # 4. Set Result
+          echo "send_email=$should_send" >> $GITHUB_ENV
+
+      - name: Send email with screenshots on failure
+        if: env.send_email == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER_ADDRESS }}
+          server_port: ${{ secrets.MAIL_SERVER_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: '❌ FAILED: PeoplesClinic 10-Minute Smoke Test'
+          body: |
+            The 10-minute smoke test (Login/Logout) has failed.
+            Repository: ${{ github.repository }}
+            See the full logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Screenshots of the failure are attached to this email.
+          to: ${{ secrets.MAIL_RECIPIENT_ADDRESS }}
+          from: GitHub Actions <${{ secrets.MAIL_SENDER_ADDRESS }}>
+          attachments: test_screenshots_smoke/*.png
+
+      - name: Save new email timestamp
+        if: env.send_email == 'true'
+        run: echo "$(date -u +%s)" > last_email_timestamp.txt
+
+      - name: Cache timestamp for next run
+        if: env.send_email == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: last_email_timestamp.txt
+          key: last-email-timestamp-smoke-test
+
+      # --- DASHBOARD SYNC FOR SMOKE TEST ---
+      - name: Generate Dashboard Data & Prepare Website
+        if: always() 
+        run: |
+          STATUS="${{ steps.test-step.outcome }}"
+          TIMESTAMP=$(date -u -Iseconds)
+          
+          # 1. Format screenshots as JSON array
+          SCREENSHOTS="[]"
+          if [ -d "test_screenshots_smoke" ]; then
+            SCREENSHOTS=$(ls test_screenshots_smoke/*.png 2>/dev/null | awk 'BEGIN { ORS = ""; print "[" } { print "\""$0"\"", "," } END { print "]" }' | sed 's/,]/]/')
+            if [ "$SCREENSHOTS" == "]" ]; then SCREENSHOTS="[]"; fi
+          fi
+
+          # 2. Create a safe, temporary folder for the website
+          mkdir -p public_html
+
+          # 3. Create the data JSON inside the folder
+          echo "{\"status\": \"$STATUS\", \"timestamp\": \"$TIMESTAMP\", \"screenshots\": $SCREENSHOTS}" > public_html/smoke-data.json
+
+          # 4. Copy the custom HTML/CSS and screenshots into the folder
+          cp -r dashboard/* public_html/ 2>/dev/null || true
+          cp -r test_screenshots_smoke public_html/ 2>/dev/null || true
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public_html
+          publish_branch: gh-pages
+          keep_files: true
+
+      # THIS REMAINS THE ABSOLUTE LAST STEP
+      - name: Check test outcome and fail job if necessary
+        if: steps.test-step.outcome == 'failure'
+        run: exit 1
