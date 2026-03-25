@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Test Artifacts
+test_screenshots_lifecycle/
+test_screenshots_signup/
+test_screenshots_targeted/
+
+# Media Files
+*.wav
+*.mp3
+*.png
