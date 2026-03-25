@@ -1,0 +1,113 @@
+name: Hourly UI/API Regression Test
+
+on:
+  workflow_dispatch: # Allows manual trigger button
+  schedule:
+    # Runs exactly at the top of every hour (e.g., 1:00, 2:00, 3:00)
+    - cron: '0 * * * *'
+
+# --- ADDED TO FIX 403 PERMISSION ERROR ---
+permissions:
+  contents: write
+
+jobs:
+  run-regression-test:
+    runs-on: ubuntu-22.04 # Keeps the Playwright fix for Linux!
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Browsers and Dependencies
+        run: playwright install chromium --with-deps
+
+      - name: Run Regression Test
+        id: test-step
+        continue-on-error: true # Crucial: Don't stop the workflow if the test fails
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: python test_regression.py
+
+      - name: Upload screenshots on failure
+        if: steps.test-step.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-regression-screenshots
+          path: monitor_screenshots_regression/
+
+      # Get Hour AND Day of week (UTC timezone)
+      # %u = Day of week (1..7); 1 is Monday, 6 is Sat, 7 is Sun
+      - name: Get current time and day (UTC)
+        if: steps.test-step.outcome == 'failure'
+        id: time_check
+        run: |
+          echo "hour=$(date -u +'%H')" >> $GITHUB_OUTPUT
+          echo "day=$(date -u +'%u')" >> $GITHUB_OUTPUT
+
+      # Identical Alarm Condition: Mon-Fri ONLY, between 04:00 UTC and 16:00 UTC
+      - name: Send email with screenshots on failure
+        if: steps.test-step.outcome == 'failure' && steps.time_check.outputs.hour >= 4 && steps.time_check.outputs.hour <= 16
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER_ADDRESS }}
+          server_port: ${{ secrets.MAIL_SERVER_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: '❌ FAILED: Hourly UI Regression Test'
+          body: |
+            The hourly UI Regression test has failed.
+            Repository: ${{ github.repository }}
+            See the full logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Screenshots are attached.
+          to: ${{ secrets.MAIL_RECIPIENT_ADDRESS }}
+          from: GitHub Actions <${{ secrets.MAIL_SENDER_ADDRESS }}>
+          attachments: monitor_screenshots_regression/*.png
+
+      # --- DASHBOARD SYNC FOR REGRESSION TEST ---
+      - name: Generate Dashboard Data & Prepare Website
+        if: always() 
+        run: |
+          STATUS="${{ steps.test-step.outcome }}"
+          TIMESTAMP=$(date -u -Iseconds)
+          
+          # 1. Format screenshots as JSON array
+          SCREENSHOTS="[]"
+          if [ -d "monitor_screenshots_regression" ]; then
+            SCREENSHOTS=$(ls monitor_screenshots_regression/*.png 2>/dev/null | awk 'BEGIN { ORS = ""; print "[" } { print "\""$0"\"", "," } END { print "]" }' | sed 's/,]/]/')
+            if [ "$SCREENSHOTS" == "]" ]; then SCREENSHOTS="[]"; fi
+          fi
+
+          # 2. Create a safe, temporary folder for the website
+          mkdir -p public_html
+
+          # 3. Create the data JSON inside the folder
+          echo "{\"status\": \"$STATUS\", \"timestamp\": \"$TIMESTAMP\", \"screenshots\": $SCREENSHOTS}" > public_html/regression-data.json
+
+          # 4. Copy the custom HTML/CSS and screenshots into the folder
+          cp -r dashboard/* public_html/ 2>/dev/null || true
+          cp -r monitor_screenshots_regression public_html/ 2>/dev/null || true
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public_html
+          publish_branch: gh-pages
+          keep_files: true # CRITICAL: Keeps the Smoke test data intact!
+
+      # THIS REMAINS THE ABSOLUTE LAST STEP
+      - name: Check test outcome and fail job if necessary
+        if: steps.test-step.outcome == 'failure'
+        run: exit 1
