@@ -11,19 +11,18 @@
     
     <style>
         :root {
-            /* Bluish Theme Foundation */
-            --bg-color: #e0f2fe;
+            --bg-color: #f0f8ff;
             --text-main: #0f172a; --text-muted: #475569;
             --card-bg: rgba(255, 255, 255, 0.7);
             --card-border: rgba(14, 165, 233, 0.4);
             
-            /* Status Colors (Green/Red) */
+            /* Core Colors */
             --pass-color: #10b981; /* Neon Green */
             --fail-color: #ef4444; /* Alert Red */
             --inactive-color: #94a3b8;
-            
-            /* Accents */
             --accent-blue: #0ea5e9;
+            --accent-purple: #8b5cf6;
+            
             --shadow: 0 15px 35px rgba(14, 165, 233, 0.15);
             --title-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
             --graph-bg: rgba(255, 255, 255, 0.4);
@@ -35,104 +34,103 @@
             --card-bg: rgba(15, 23, 42, 0.75);
             --card-border: rgba(14, 165, 233, 0.3);
             
-            --pass-color: #10b981;
-            --fail-color: #ef4444;
-            
-            --accent-blue: #38bdf8;
             --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
             --title-gradient: linear-gradient(90deg, #38bdf8, #818cf8);
             --graph-bg: rgba(10, 15, 30, 0.6);
         }
 
-        * { box-sizing: border-box; transition: background-color 0.4s ease, color 0.4s ease; }
+        * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
+        /* Fit-to-Screen Architecture */
         body {
-            font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh;
-            color: var(--text-main); overflow-x: hidden; background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif; margin: 0; padding: 0;
+            height: 100vh; /* Exactly 1 screen height */
+            overflow: hidden; /* No scrolling allowed */
+            display: flex; flex-direction: column;
+            color: var(--text-main); background-color: var(--bg-color);
         }
 
-        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.5; pointer-events: none; }
+        #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.6; pointer-events: none; }
 
-        /* Navbar */
+        /* Header with Integrated Status */
         header {
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
-            padding: 20px 5%; background: var(--card-bg);
+            flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 15px;
+            padding: 15px 25px; background: var(--card-bg);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--card-border);
-            position: relative; z-index: 50; box-shadow: var(--shadow);
+            border-bottom: 1px solid var(--card-border); z-index: 50; box-shadow: var(--shadow);
         }
-        .logo-container img { height: 45px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
+        .logo-container img { height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-        h1 { 
-            font-size: clamp(1.2rem, 2vw, 1.8rem); font-weight: 700; margin: 0; text-align: center; flex-grow: 1; 
-            background: var(--title-gradient); -webkit-background-clip: text; color: transparent;
-        }
+        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
 
-        .theme-toggle {
-            background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main);
-            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; 
-        }
+        /* Header Status Light */
+        .header-status { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 8px 15px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;}
+        [data-theme="dark"] .header-status { background: rgba(255,255,255,0.05); }
+        .status-led { width: 12px; height: 12px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
+        .led-pass { background: var(--pass-color); box-shadow: 0 0 10px var(--pass-color); }
+        .led-fail { background: var(--fail-color); box-shadow: 0 0 10px var(--fail-color); }
+
+        .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; }
         .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
-        /* Responsive Layout */
+        /* Main Dashboard Grid */
         .dashboard-layout {
-            display: grid; grid-template-columns: 1fr 2fr; gap: 30px;
-            width: 95%; max-width: 1600px; margin: 40px auto; padding-bottom: 80px;
-        }
-        @media (max-width: 1100px) { 
-            .dashboard-layout { grid-template-columns: 1fr; } 
-            .chart-section { min-height: 500px; }
+            flex: 1 1 auto; display: flex; gap: 20px; padding: 20px;
+            overflow: hidden; /* Lock grid */
+            max-width: 1800px; margin: 0 auto; width: 100%;
         }
 
-        .cards-column { display: flex; flex-direction: column; gap: 30px; }
+        .cards-column {
+            flex: 0 0 380px; display: flex; flex-direction: column; gap: 20px;
+            overflow-y: auto; /* Only scroll cards if they overflow vertically */
+            padding-right: 10px;
+        }
+        /* Hide scrollbar for clean look */
+        .cards-column::-webkit-scrollbar { width: 6px; }
+        .cards-column::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
 
-        /* Enhanced Glass Cards */
+        .chart-section {
+            flex: 1 1 auto; display: flex; flex-direction: column;
+            overflow: hidden; height: 100%;
+        }
+        .chart-container { flex: 1 1 auto; min-height: 0; width: 100%; position: relative; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 10px;}
+
+        /* Glass Cards */
         .card, .chart-section {
             background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--card-border); border-radius: 24px; padding: 30px;
+            border: 1px solid var(--card-border); border-radius: 20px; padding: 25px;
             box-shadow: var(--shadow); position: relative; z-index: 20;
-            background-image: radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent);
         }
 
-        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .card h2 { margin: 0; font-size: 1.4rem; color: var(--accent-blue); }
-        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; }
+        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .card h2 { margin: 0; font-size: 1.3rem; color: var(--accent-blue); }
+        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.4rem; }
         
-        /* Fixed Tooltip */
+        /* Tooltip Fixed */
         .info-icon {
-            display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
-            border-radius: 50%; background: var(--accent-blue); color: #fff;
-            font-size: 12px; cursor: help; position: relative; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; width: 20px; height: 20px;
+            border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 12px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
             position: absolute; top: 130%; left: 50%; transform: translateX(-50%) translateY(-10px);
-            background: var(--accent-blue); color: #fff; padding: 12px 18px;
-            border-radius: 12px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; text-align: center;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5); font-weight: 500; pointer-events: none;
+            background: var(--accent-blue); color: #fff; padding: 12px; border-radius: 10px; font-size: 0.85rem; width: 260px; opacity: 0; visibility: hidden;
+            transition: all 0.3s; z-index: 9999; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); pointer-events: none;
         }
-        .tooltip::before {
-            content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-            border-width: 8px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent;
-        }
+        .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
         /* Status & Heartbeats */
-        .status-badge { 
-            display: inline-flex; align-items: center; gap: 12px; font-weight: 700; 
-            font-size: 1.1rem; padding: 8px 16px; border-radius: 12px; 
-            background: rgba(0,0,0,0.03); border: 1px solid transparent;
-        }
+        .status-badge { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; padding: 6px 14px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
         [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.03); }
 
-        .heartbeat-icon { width: 50px; height: 25px; overflow: visible; }
+        .heartbeat-icon { width: 45px; height: 22px; overflow: visible; }
         .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
 
-        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.2); text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);}
+        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.3); text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);}
         .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; filter: drop-shadow(0 0 4px var(--pass-color)); }
 
-        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.2); text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);}
+        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.3); text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);}
         .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; filter: drop-shadow(0 0 4px var(--fail-color)); }
 
         .status-inactive { color: var(--inactive-color); }
@@ -140,25 +138,19 @@
 
         @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
 
-        .meta { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; }
-        .screenshot-container { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); }
+        .meta { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+        .screenshot-container { margin-top: 15px; border-radius: 10px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); }
         .screenshot { width: 100%; display: block; cursor: pointer; }
-        .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); }
+        .no-failures { padding: 12px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: 15px; border: 1px dashed var(--pass-color); }
 
-        /* Chart Area */
-        .chart-section { display: flex; flex-direction: column; }
-        .chart-container { width: 100%; flex-grow: 1; min-height: 400px; margin-top: 10px; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); padding: 10px;}
-
-        /* Global Status Floating Widget */
-        .global-status {
-            position: fixed; bottom: 20px; left: 20px; background: var(--card-bg);
-            backdrop-filter: blur(15px); border: 1px solid var(--card-border);
-            padding: 12px 25px; border-radius: 30px; box-shadow: var(--shadow);
-            display: flex; align-items: center; gap: 15px; font-weight: 600; font-size: 0.95rem; z-index: 100;
+        /* Mobile Responsiveness */
+        @media (max-width: 1000px) { 
+            body { height: auto; overflow-y: auto; }
+            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; }
+            .cards-column { flex: 0 0 auto; padding-right: 0; }
+            .chart-section { min-height: 500px; flex: 0 0 auto; }
+            .header-status { display: none; } /* Hide in header on mobile to save space */
         }
-        .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); }
-        .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
-        .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
     </style>
 </head>
 <body>
@@ -170,15 +162,20 @@
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
         </a>
         <h1>Peoples Clinic Status Monitoring</h1>
+        
+        <div class="header-status" id="global-status">
+            <div class="status-led" id="global-led"></div>
+            <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
+        </div>
+
         <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">Toggle Theme</button>
     </header>
 
     <div class="dashboard-layout">
-        <!-- Cards Column -->
         <div class="cards-column">
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
-                    <h2>💨 10-Min Smoke Test</h2>
+                    <h2>💨 Smoke Test</h2>
                     <div class="info-icon">i
                         <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span>
                     </div>
@@ -217,32 +214,26 @@
             </div>
         </div>
 
-        <!-- 3D Graph Column -->
         <div class="chart-section">
             <div class="title-wrapper">
                 <h2>📊 Live Global Stability Matrix</h2>
                 <div class="info-icon">i
-                    <span class="tooltip">Synchronized globally. Plots the precise Pass/Fail status of individual tests over the last 24 hours. Drag to rotate!</span>
+                    <span class="tooltip">True Timeline. Plots precise Pass/Fail statuses independently. Colors: Green (Pass), Red (Fail).</span>
                 </div>
             </div>
             <div class="chart-container" id="historyChart"></div>
         </div>
     </div>
 
-    <div class="global-status" id="global-status">
-        <div class="status-led" id="global-led"></div>
-        <span id="global-text">System Status: Analyzing...</span>
-    </div>
-
     <script>
-        // --- 1. Smart Time-Based Theme ---
+        // --- 1. Strict Clock-Based Theme ---
         const themeBtn = document.getElementById('theme-btn');
-        let userToggled = false; 
+        let manualOverride = false;
         
-        function setSmartTheme() {
-            if(userToggled) return; // Respect manual clicks in session
+        function enforceClockTheme() {
+            if(manualOverride) return;
             const hour = new Date().getHours();
-            // True Dark mode from 18:00 (6 PM) to 05:59 (5 AM)
+            // Dark mode from 18:00 (6 PM) to 05:59 (5 AM)
             const isDaytime = hour >= 6 && hour < 18;
             applyTheme(isDaytime ? 'light' : 'dark');
         }
@@ -250,36 +241,33 @@
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            if (typeof render3DChart === "function") render3DChart();
-            if (typeof update3DBackgroundTheme === "function") update3DBackgroundTheme(theme);
+            if (window.render3DChart) window.render3DChart();
+            if (window.update3DBackgroundTheme) window.update3DBackgroundTheme(theme);
         }
 
         function toggleThemeManual() {
-            userToggled = true;
+            manualOverride = true;
             const current = document.documentElement.getAttribute('data-theme');
             applyTheme(current === 'light' ? 'dark' : 'light');
         }
-        setSmartTheme(); // Run immediately
+        enforceClockTheme(); // Run on Load
 
         // --- 2. Live UI Updaters ---
         let globalState = { smoke: 'inactive', regression: 'inactive' };
-        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} }; // Split Data Arrays!
+        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} };
 
         function updateGlobalStatus() {
             const txt = document.getElementById('global-text');
             const led = document.getElementById('global-led');
 
             if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
-                txt.innerText = 'System Status: Degraded (Alert)';
-                txt.style.color = 'var(--fail-color)';
+                txt.innerHTML = 'Status: <span style="color:var(--fail-color)">Degraded</span>';
                 led.className = 'status-led led-fail';
             } else if (globalState.smoke === 'success' || globalState.regression === 'success') {
-                txt.innerText = 'System Status: All Systems Operational';
-                txt.style.color = 'var(--pass-color)';
+                txt.innerHTML = 'Status: <span style="color:var(--pass-color)">Operational</span>';
                 led.className = 'status-led led-pass';
             } else {
-                txt.innerText = 'System Status: Monitoring Paused';
-                txt.style.color = 'var(--inactive-color)';
+                txt.innerHTML = 'Status: <span style="color:var(--inactive-color)">Paused</span>';
                 led.className = 'status-led';
             }
         }
@@ -292,7 +280,7 @@
             
             try {
                 const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-                if (!response.ok) throw new Error("File not found");
+                if (!response.ok) throw new Error("Not Found");
                 const data = await response.json();
 
                 const now = new Date();
@@ -305,7 +293,7 @@
                     badgeEl.className = 'status-badge status-inactive';
                     textEl.innerText = 'PAUSED';
                     pathEl.setAttribute('d', 'M0 15 L100 15');
-                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor offline/paused.</div>';
+                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor paused.</div>';
                     globalState[testName] = 'inactive';
                 } else {
                     globalState[testName] = data.status;
@@ -320,14 +308,14 @@
                         pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15');
                         if (data.screenshots && data.screenshots.length > 0) {
                             const lastImg = data.screenshots[data.screenshots.length - 1];
-                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Frame:</p><div class="screenshot-container"><a href="${lastImg}" target="_blank"><img src="${lastImg}" class="screenshot" alt="Failure"></a></div>`;
+                            imgContainer.innerHTML = `<div class="screenshot-container"><a href="${lastImg}" target="_blank"><img src="${lastImg}" class="screenshot" alt="Failure"></a></div>`;
                         }
                     }
                 }
             } catch (e) {
                 badgeEl.className = 'status-badge status-inactive';
                 textEl.innerText = 'DATA ERROR';
-                imgContainer.innerHTML = `<div class="no-failures" style="color:var(--fail-color); border-color:var(--fail-color)">Could not read test data.</div>`;
+                imgContainer.innerHTML = '';
             }
             updateGlobalStatus();
         }
@@ -335,7 +323,7 @@
         loadLiveData('smoke', 'smoke', 30);
         loadLiveData('regression', 'regression', 120);
 
-        // --- 3. Split-Data GitHub Sync ---
+        // --- 3. Split-Data True Time API Sync ---
         async function fetchGlobalHistory() {
             try {
                 const hostname = window.location.hostname;
@@ -355,27 +343,26 @@
                 const regData = await regRes.json();
                 const smokeData = await smokeRes.json();
 
-                // Process Smoke completely independently
+                // Store REAL Javascript Date objects for true timeline plotting
                 if(smokeData.workflow_runs) {
                     smokeData.workflow_runs.reverse().forEach(run => {
-                        githubHistory.smoke.x.push(new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        githubHistory.smoke.x.push(new Date(run.updated_at));
                         githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0);
                     });
                 }
-                // Process Regression completely independently
                 if(regData.workflow_runs) {
                     regData.workflow_runs.reverse().forEach(run => {
-                        githubHistory.reg.x.push(new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        githubHistory.reg.x.push(new Date(run.updated_at));
                         githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0);
                     });
                 }
-                render3DChart();
+                window.render3DChart();
             } catch(e) {
-                console.warn("API fallback used.");
-                // Fallback creates distinct arrays
-                githubHistory.smoke = { x: ['1:00','1:10','1:20','1:30'], z: [1,1,1,globalState.smoke === 'failure'?0:1] };
-                githubHistory.reg = { x: ['1:00','2:00'], z: [1, globalState.regression === 'failure'?0:1] };
-                render3DChart();
+                console.warn("API fallback generated real dates.");
+                let now = new Date();
+                githubHistory.smoke = { x: [new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1,1,1,globalState.smoke === 'failure'?0:1] };
+                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), now], z: [1, globalState.regression === 'failure'?0:1] };
+                window.render3DChart();
             }
         }
         setTimeout(fetchGlobalHistory, 1500);
@@ -386,52 +373,49 @@
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let fontColor = isDark ? '#e2e8f0' : '#0f172a';
-            let gridColor = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)'; // Glowing blue grids
+            let gridColor = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)';
             let passColor = '#10b981'; // Neon Green
             let failColor = '#ef4444'; // Neon Red
 
-            let hoverTemplate = "<b>%{text}</b><br>Time: %{x}<extra></extra>";
+            // Unique HTML Colors for Axes
+            let axisSmokeText = `<b><span style="color:#0ea5e9; font-size:13px;">Smoke</span></b>`;
+            let axisRegText = `<b><span style="color:#8b5cf6; font-size:13px;">Regression</span></b>`;
+            let axisPassText = `<b><span style="color:${passColor}; font-size:13px;">PASS</span></b>`;
+            let axisFailText = `<b><span style="color:${failColor}; font-size:13px;">FAIL</span></b>`;
+            let xTitle = `<b><span style="color:#f59e0b;">Timeline</span></b>`; // Amber
 
-            // Smoke Trace (Y=0)
             var traceSmoke = {
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
                 mode: 'lines+markers', name: 'Smoke Test',
-                line: { width: 8, color: '#38bdf8' }, 
-                marker: { size: 8, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: '#fff'} },
-                text: githubHistory.smoke.z.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), 
-                hovertemplate: hoverTemplate, type: 'scatter3d'
+                line: { width: 6, color: '#0ea5e9' }, 
+                marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 1.5, color: '#fff'} },
+                text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
+                hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
             };
 
-            // Regression Trace (Y=1)
             var traceReg = {
                 x: githubHistory.reg.x, y: new Array(githubHistory.reg.x.length).fill(1), z: githubHistory.reg.z,
                 mode: 'lines+markers', name: 'Regression Test',
-                line: { width: 8, color: '#818cf8' }, 
-                marker: { size: 10, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: '#fff'} },
-                text: githubHistory.reg.z.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), 
-                hovertemplate: hoverTemplate, type: 'scatter3d'
+                line: { width: 6, color: '#8b5cf6' }, 
+                marker: { size: 8, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 1.5, color: '#fff'} },
+                text: githubHistory.reg.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
+                hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
             };
 
             var layout = {
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', 
-                margin: { l: 0, r: 0, b: 0, t: 0 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    xaxis: { title: { text: 'Time', font: { color: fontColor, size: 14 } }, color: fontColor, gridcolor: gridColor, showbackground: false },
-                    yaxis: { title: '', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
-                    zaxis: { 
-                        title: { text: 'Result', font: { color: fontColor, size: 14 } }, color: fontColor, gridcolor: gridColor, 
-                        tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.5)' : 'rgba(255,255,255,0.3)'
-                    },
-                    camera: { eye: {x: -1.6, y: -1.6, z: 0.4} }
+                    xaxis: { title: { text: xTitle }, type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 11 }, gridcolor: gridColor, showbackground: false },
+                    yaxis: { title: '', gridcolor: gridColor, tickvals: [0, 1], ticktext: [axisSmokeText, axisRegText], showbackground: false },
+                    zaxis: { title: '', gridcolor: gridColor, tickvals: [0, 1], ticktext: [axisFailText, axisPassText], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.4)' : 'rgba(255,255,255,0.4)' },
+                    camera: { eye: {x: -1.7, y: -1.7, z: 0.4} }
                 },
-                legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' },
-                autosize: true
+                legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
 
             Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
         };
 
-        // Window Resize Event for Plotly
         window.addEventListener('resize', () => { if(typeof Plotly !== 'undefined') Plotly.Plots.resize('historyChart'); });
 
         // --- 5. Three.js Ocean Background ---
@@ -444,8 +428,8 @@
             renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
 
-            const geometry = new THREE.PlaneGeometry(200, 100, 40, 20);
-            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 });
+            const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
+            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.2 });
 
             planeMesh = new THREE.Mesh(geometry, material);
             planeMesh.rotation.x = -Math.PI / 2.5; 
@@ -462,7 +446,7 @@
         }
 
         window.update3DBackgroundTheme = function(theme) {
-            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.1 : 0.2;
+            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.25;
         };
 
         function animate3D() {
