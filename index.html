@@ -4,141 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peoples Clinic Status Monitoring</title>
-    <!-- Import Chart.js for the History Graph -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Import Google Fonts -->
+    
+    <!-- Plotly.js for the True 3D Graph -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            /* Light Theme (Peoples Doctor vibe) */
+            /* Light Theme */
             --bg-mesh-1: #e0f2fe; --bg-mesh-2: #f0fdf4; --bg-mesh-3: #eef2ff;
             --text-main: #0f172a; --text-muted: #475569;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(255, 255, 255, 0.5);
-            --pass-color: #10b981; --pass-glow: rgba(16, 185, 129, 0.5);
-            --fail-color: #ef4444; --fail-glow: rgba(239, 68, 68, 0.5);
-            --inactive-color: #94a3b8; --inactive-glow: rgba(148, 163, 184, 0.2);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.5);
+            --card-border: rgba(255, 255, 255, 0.8);
+            --pass-color: #10b981; --fail-color: #ef4444; --inactive-color: #94a3b8;
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
 
         [data-theme="dark"] {
             /* Dark Theme */
             --bg-mesh-1: #020617; --bg-mesh-2: #0f172a; --bg-mesh-3: #1e1b4b;
             --text-main: #f8fafc; --text-muted: #94a3b8;
-            --card-bg: rgba(15, 23, 42, 0.65);
+            --card-bg: rgba(15, 23, 42, 0.4);
             --card-border: rgba(255, 255, 255, 0.1);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
 
-        * { box-sizing: border-box; transition: background-color 0.4s, color 0.4s; }
+        * { box-sizing: border-box; transition: color 0.4s; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0; padding: 0; min-height: 100vh;
-            color: var(--text-main);
-            overflow-x: hidden;
-            /* 3D Animated Mesh Background */
+            font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh;
+            color: var(--text-main); overflow-x: hidden;
             background: linear-gradient(45deg, var(--bg-mesh-1), var(--bg-mesh-2), var(--bg-mesh-3));
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        /* Header */
+        /* Navbar */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 40px; background: var(--card-bg);
-            backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border);
-            box-shadow: var(--shadow); position: relative; z-index: 10;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            position: relative; z-index: 10; /* Lower than card hover */
         }
-        .logo-container img { height: 45px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
+        .logo-container img { height: 45px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(255,255,255,0.2)); }
-        
-        h1 { font-size: 1.5rem; font-weight: 600; margin: 0; text-align: center; flex-grow: 1; letter-spacing: -0.5px;}
+        h1 { font-size: 1.6rem; font-weight: 700; margin: 0; text-align: center; flex-grow: 1; letter-spacing: -0.5px;}
 
-        /* Theme Toggle Button */
         .theme-toggle {
-            background: transparent; border: 1px solid var(--text-muted);
-            color: var(--text-main); padding: 8px 16px; border-radius: 20px;
-            cursor: pointer; font-weight: 600; transition: all 0.2s;
+            background: transparent; border: 2px solid var(--text-muted); color: var(--text-main);
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;
         }
-        .theme-toggle:hover { background: var(--text-main); color: var(--card-bg); }
+        .theme-toggle:hover { background: var(--text-main); color: var(--card-bg); transform: scale(1.05); }
 
-        /* Main Grid */
-        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-bottom: 40px; }
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; perspective: 1000px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 40px; margin-bottom: 50px; }
 
-        /* Glassmorphism Cards */
+        /* Interactive 3D Cards */
         .card {
-            background: var(--card-bg); backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border); border-radius: 16px;
-            padding: 25px; box-shadow: var(--shadow);
-            position: relative; overflow: visible;
+            background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border); border-radius: 24px; padding: 30px;
+            box-shadow: var(--shadow); position: relative;
+            transform-style: preserve-3d; transition: transform 0.1s;
+            z-index: 20; 
         }
+        .card:hover { z-index: 100; /* Fixes tooltip hiding under navbar */ }
 
-        /* Tooltip (Hover Description) */
-        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .card h2 { margin: 0; font-size: 1.25rem; }
+        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; transform: translateZ(30px); }
+        .card h2 { margin: 0; font-size: 1.4rem; }
+        
+        /* Tooltips */
         .info-icon {
-            display: inline-flex; justify-content: center; align-items: center;
-            width: 20px; height: 20px; border-radius: 50%; background: var(--text-muted);
-            color: var(--card-bg); font-size: 12px; cursor: help; position: relative;
+            display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
+            border-radius: 50%; background: var(--text-muted); color: var(--card-bg);
+            font-size: 12px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
-            position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
-            background: var(--text-main); color: var(--card-bg);
-            padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; width: 250px;
-            opacity: 0; visibility: hidden; transition: 0.2s; z-index: 20; text-align: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2); font-weight: normal; line-height: 1.4;
+            position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%) translateY(10px);
+            background: var(--text-main); color: var(--bg-mesh-1); padding: 12px 18px;
+            border-radius: 12px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 999; text-align: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3); font-weight: normal; pointer-events: none;
         }
         .tooltip::after {
             content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-            border-width: 6px; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
+            border-width: 8px; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
         }
-        .info-icon:hover .tooltip { opacity: 1; visibility: visible; bottom: 150%; }
+        .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
-        /* Pulsing Status Badges */
-        .status-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.95rem; padding: 6px 12px; border-radius: 20px; background: rgba(0,0,0,0.05); }
+        /* Heartbeat SVG Animation */
+        .status-badge { 
+            display: inline-flex; align-items: center; gap: 12px; font-weight: 700; 
+            font-size: 1.1rem; padding: 8px 16px; border-radius: 12px; 
+            background: rgba(0,0,0,0.05); transform: translateZ(20px); 
+            border: 1px solid transparent;
+        }
         [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.05); }
+
+        .heartbeat-icon { width: 50px; height: 25px; overflow: visible; }
+        .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
+
+        /* Pass = Steady Green Heartbeat */
+        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.2); }
+        .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; }
+
+        /* Fail = Fast/Panic Red Heartbeat */
+        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.2); }
+        .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; }
+
+        /* Inactive = Grey Flatline */
+        .status-inactive { color: var(--inactive-color); border-color: rgba(148, 163, 184, 0.2); }
+        .status-inactive .hb-path { stroke: var(--inactive-color); stroke-dasharray: 0; stroke-dashoffset: 0; animation: none; }
+
+        @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
+
+        .meta { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; transform: translateZ(15px); }
         
-        .pulse-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-        
-        /* Pulse Animations */
-        .status-passed .pulse-dot { background: var(--pass-color); animation: pulse-green 2s infinite; }
-        .status-passed { color: var(--pass-color); }
-        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 var(--pass-glow); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        /* Screenshot Reveal */
+        .screenshot-container { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 2px solid var(--fail-color); transform: translateZ(25px); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); }
+        .screenshot { width: 100%; display: block; transition: transform 0.3s; cursor: pointer; }
+        .screenshot:hover { transform: scale(1.05); }
+        .no-failures { padding: 20px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); transform: translateZ(25px);}
 
-        .status-failed .pulse-dot { background: var(--fail-color); animation: pulse-red 2s infinite; }
-        .status-failed { color: var(--fail-color); }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 var(--fail-glow); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        /* 3D Chart Section */
+        .chart-section { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); margin-bottom: 60px; z-index: 10;}
+        .chart-container { width: 100%; height: 500px; margin-top: 20px; border-radius: 12px; overflow: hidden; }
 
-        .status-inactive .pulse-dot { background: var(--inactive-color); } /* No animation for inactive */
-        .status-inactive { color: var(--inactive-color); }
-
-        .meta { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
-        
-        /* Screenshots */
-        .screenshot-container { margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid var(--card-border); background: #000; }
-        .screenshot { width: 100%; display: block; opacity: 0.9; transition: opacity 0.3s; }
-        .screenshot:hover { opacity: 1; }
-        .no-failures { padding: 20px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 8px; margin-top: 15px; }
-
-        /* Chart Section */
-        .chart-section { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--card-border); border-radius: 16px; padding: 25px; box-shadow: var(--shadow); margin-bottom: 60px;}
-        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
-
-        /* Bottom Left Global Status */
-        .global-status {
-            position: fixed; bottom: 20px; left: 20px; background: var(--card-bg);
-            backdrop-filter: blur(10px); border: 1px solid var(--card-border);
-            padding: 10px 20px; border-radius: 30px; box-shadow: var(--shadow);
-            display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; z-index: 100;
-        }
     </style>
 </head>
 <body>
@@ -158,11 +150,15 @@
                 <div class="title-wrapper">
                     <h2>💨 10-Minute Smoke Test</h2>
                     <div class="info-icon">i
-                        <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out of the application to ensure the authentication servers and database are responding.</span>
+                        <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span>
                     </div>
                 </div>
                 <div id="smoke-status-badge" class="status-badge status-inactive">
-                    <span class="pulse-dot"></span> <span id="smoke-status-text">Checking...</span>
+                    <!-- Heartbeat SVG -->
+                    <svg class="heartbeat-icon" viewBox="0 0 100 30">
+                        <path id="smoke-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
+                    </svg>
+                    <span id="smoke-status-text">Checking...</span>
                 </div>
                 <div class="meta">
                     <p><strong>Last Checked:</strong> <span id="smoke-time">...</span></p>
@@ -176,11 +172,15 @@
                 <div class="title-wrapper">
                     <h2>🔍 Regression Monitoring</h2>
                     <div class="info-icon">i
-                        <span class="tooltip">Deep E2E analysis. Creates a patient, starts a live consultation, injects a WebM audio payload via API, and validates the AI-generated medical note.</span>
+                        <span class="tooltip">Deep E2E analysis. Creates a patient, starts a live consultation, injects an audio payload via API, and validates the AI medical note.</span>
                     </div>
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
-                    <span class="pulse-dot"></span> <span id="regression-status-text">Checking...</span>
+                    <!-- Heartbeat SVG -->
+                    <svg class="heartbeat-icon" viewBox="0 0 100 30">
+                        <path id="reg-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
+                    </svg>
+                    <span id="regression-status-text">Checking...</span>
                 </div>
                 <div class="meta">
                     <p><strong>Last Checked:</strong> <span id="regression-time">...</span></p>
@@ -190,27 +190,33 @@
             </div>
         </div>
 
-        <!-- 3D History Graph -->
+        <!-- True 3D History Graph -->
         <div class="chart-section">
             <div class="title-wrapper">
-                <h2>📈 System Stability History (24h)</h2>
+                <h2>📊 True 3D Stability History</h2>
                 <div class="info-icon">i
-                    <span class="tooltip">Visual representation of system uptime based on recent automated test executions. 100% means all checks passed successfully.</span>
+                    <span class="tooltip">Real-time local tracking. Plots the exact status of both test suites over time in a 3D topological space. Drag to rotate!</span>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="historyChart"></canvas>
-            </div>
+            <div class="chart-container" id="historyChart"></div>
         </div>
     </div>
 
-    <!-- Floating Global Status -->
-    <div class="global-status" id="global-status">
-        <span class="pulse-dot" id="global-dot" style="background: var(--inactive-color);"></span>
-        <span id="global-text">System Status: Analyzing...</span>
-    </div>
-
     <script>
+        // --- 3D Mouse Tracking Interactivity ---
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                let rect = card.getBoundingClientRect();
+                let x = e.clientX - rect.left - rect.width/2;
+                let y = e.clientY - rect.top - rect.height/2;
+                // Rotate based on mouse position
+                card.style.transform = `rotateX(${-y/15}deg) rotateY(${x/15}deg) scale(1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+            });
+        });
+
         // --- Theme Management ---
         const themeBtn = document.getElementById('theme-btn');
         let currentTheme = localStorage.getItem('theme') || 'light';
@@ -222,17 +228,44 @@
             document.documentElement.setAttribute('data-theme', currentTheme);
             localStorage.setItem('theme', currentTheme);
             themeBtn.innerText = currentTheme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            updateChartTheme(); // Redraw chart colors
+            render3DChart(); // Redraw chart colors
+        }
+
+        // --- Local History Management (Real Data) ---
+        function saveHistory(testName, isSuccess, timestamp) {
+            let history = JSON.parse(localStorage.getItem('testHistory')) || { times: [], smoke: [], regression: [] };
+            
+            // Format time nicely
+            let timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // If this timestamp doesn't exist yet, add a new row
+            if (history.times.length === 0 || history.times[history.times.length - 1] !== timeStr) {
+                history.times.push(timeStr);
+                // Copy last known state for both, then update the one that just ran
+                let lastSmoke = history.smoke.length > 0 ? history.smoke[history.smoke.length - 1] : 100;
+                let lastReg = history.regression.length > 0 ? history.regression[history.regression.length - 1] : 100;
+                
+                history.smoke.push(testName === 'smoke' ? (isSuccess ? 100 : 0) : lastSmoke);
+                history.regression.push(testName === 'regression' ? (isSuccess ? 100 : 0) : lastReg);
+            } else {
+                // Update existing row (if both run at the same minute)
+                if (testName === 'smoke') history.smoke[history.smoke.length - 1] = isSuccess ? 100 : 0;
+                if (testName === 'regression') history.regression[history.regression.length - 1] = isSuccess ? 100 : 0;
+            }
+
+            // Keep only last 10 runs to keep graph clean
+            if (history.times.length > 10) {
+                history.times.shift(); history.smoke.shift(); history.regression.shift();
+            }
+
+            localStorage.setItem('testHistory', JSON.stringify(history));
         }
 
         // --- Data Fetching & UI Logic ---
-        let globalState = { smoke: 'inactive', regression: 'inactive' };
-
         async function loadData(testName, cardPrefix, inactiveThresholdMinutes) {
             try {
-                // Cache-busting URL to ensure fresh data
                 const response = await fetch(`${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-                if (!response.ok) throw new Error("No data yet");
+                if (!response.ok) throw new Error("No data");
                 const data = await response.json();
 
                 const now = new Date();
@@ -241,134 +274,93 @@
 
                 const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
                 const textEl = document.getElementById(`${cardPrefix}-status-text`);
-                const timeEl = document.getElementById(`${cardPrefix}-time`);
                 const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
+                const pathEl = document.getElementById(`${cardPrefix === 'smoke' ? 'smoke-hb' : 'reg-hb'}`);
+                
+                document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString();
 
-                timeEl.innerText = testTime.toLocaleString();
-
-                // Logic to check if test was disabled in GitHub (Old timestamp)
+                // Check Inactive
                 if (diffMinutes > inactiveThresholdMinutes) {
                     badgeEl.className = 'status-badge status-inactive';
-                    textEl.innerText = 'DEACTIVATED / PAUSED';
-                    globalState[testName] = 'inactive';
-                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); background:rgba(0,0,0,0.05);">Test is currently paused.</div>';
+                    textEl.innerText = 'PAUSED';
+                    pathEl.setAttribute('d', 'M0 15 L100 15'); // Flatline
+                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor paused/offline.</div>';
                 } else {
-                    // Test is active
+                    saveHistory(testName, data.status === 'success', testTime);
+
                     if (data.status === 'success') {
                         badgeEl.className = 'status-badge status-passed';
                         textEl.innerText = 'PASSING';
-                        globalState[testName] = 'success';
-                        imgContainer.innerHTML = '<div class="no-failures">🎉 No recent failures detected!</div>';
+                        pathEl.setAttribute('d', 'M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15'); // Normal beat
+                        imgContainer.innerHTML = '<div class="no-failures">✅ Systems healthy. No screenshots to display.</div>';
                     } else {
                         badgeEl.className = 'status-badge status-failed';
                         textEl.innerText = 'FAILING';
-                        globalState[testName] = 'failure';
+                        pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15'); // Erratic beat
                         if (data.screenshots && data.screenshots.length > 0) {
                             const lastImage = data.screenshots[data.screenshots.length - 1];
-                            imgContainer.innerHTML = `<div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure Screenshot"></a></div>`;
+                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Detected:</p><div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure Screenshot"></a></div>`;
                         }
                     }
                 }
-                updateGlobalStatus();
+                render3DChart();
             } catch (e) {
-                console.log(`Waiting for ${testName} data...`);
+                console.log(`Waiting for ${testName}...`);
             }
         }
 
-        function updateGlobalStatus() {
-            const globalText = document.getElementById('global-text');
-            const globalDot = document.getElementById('global-dot');
-
-            if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
-                globalText.innerText = 'System Status: Degraded (Errors Detected)';
-                globalText.style.color = 'var(--fail-color)';
-                globalDot.style.background = 'var(--fail-color)';
-                globalDot.style.boxShadow = '0 0 10px var(--fail-color)';
-            } else if (globalState.smoke === 'success' || globalState.regression === 'success') {
-                globalText.innerText = 'System Status: All Systems Operational';
-                globalText.style.color = 'var(--pass-color)';
-                globalDot.style.background = 'var(--pass-color)';
-                globalDot.style.boxShadow = '0 0 10px var(--pass-color)';
-            } else {
-                globalText.innerText = 'System Status: Monitoring Paused';
-                globalText.style.color = 'var(--inactive-color)';
-                globalDot.style.background = 'var(--inactive-color)';
-                globalDot.style.boxShadow = 'none';
-            }
-            
-            // Re-render chart based on latest data point
-            renderChart(globalState.smoke === 'failure' || globalState.regression === 'failure' ? 85 : 100);
-        }
-
-        // Run data loaders (Smoke threshold: 30 mins. Regression threshold: 120 mins).
+        // Run data loaders
         loadData('smoke', 'smoke', 30);
         loadData('regression', 'regression', 120);
 
-        // --- Chart.js 3D Volumetric Graph ---
-        let historyChart;
-        function renderChart(latestScore) {
-            const ctx = document.getElementById('historyChart').getContext('2d');
-            
-            // Create 3D Gradient Fill
-            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            
-            if (isDark) {
-                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.5)'); // Teal/Green glow top
-                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)'); // Fade to transparent bottom
-            } else {
-                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
-                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
-            }
+        // --- Plotly.js True 3D Graph ---
+        function render3DChart() {
+            let history = JSON.parse(localStorage.getItem('testHistory'));
+            if (!history || history.times.length === 0) return; // Wait for data
 
-            // Simulated past 24 hours of data + real latest data
-            const labels = ['-24h', '-20h', '-16h', '-12h', '-8h', '-4h', 'Now'];
-            const dataPoints = [100, 100, 100, 85, 100, 100, latestScore];
+            let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let fontColor = isDark ? '#f8fafc' : '#0f172a';
+            let bgColor = 'rgba(0,0,0,0)'; // Transparent background
 
-            if (historyChart) historyChart.destroy();
+            // Y-Axis maps: 0 = Smoke, 1 = Regression
+            let ySmoke = new Array(history.times.length).fill(0);
+            let yReg = new Array(history.times.length).fill(1);
 
-            historyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'System Stability (%)',
-                        data: dataPoints,
-                        borderColor: '#10b981',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#10b981',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        fill: true,
-                        backgroundColor: gradient,
-                        tension: 0.4 // Makes the line curved/smooth
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-                    scales: {
-                        y: { 
-                            min: 0, max: 105, 
-                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-                            ticks: { color: isDark ? '#94a3b8' : '#475569' }
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { color: isDark ? '#94a3b8' : '#475569' }
-                        }
+            var traceSmoke = {
+                x: history.times, y: ySmoke, z: history.smoke,
+                mode: 'lines+markers', name: 'Smoke Test',
+                line: { width: 8, color: '#10b981' }, // Green
+                marker: { size: 6, color: '#10b981', symbol: 'circle' },
+                type: 'scatter3d'
+            };
+
+            var traceReg = {
+                x: history.times, y: yReg, z: history.regression,
+                mode: 'lines+markers', name: 'Regression Test',
+                line: { width: 8, color: '#3b82f6' }, // Blue
+                marker: { size: 6, color: '#3b82f6', symbol: 'diamond' },
+                type: 'scatter3d'
+            };
+
+            var layout = {
+                paper_bgcolor: bgColor, plot_bgcolor: bgColor,
+                margin: { l: 0, r: 0, b: 0, t: 0 },
+                scene: {
+                    xaxis: { title: 'Time', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0' },
+                    yaxis: { 
+                        title: 'Test Suite', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0',
+                        tickvals: [0, 1], ticktext: ['Smoke', 'Regression'] 
                     },
-                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
-                }
-            });
-        }
+                    zaxis: { 
+                        title: 'Status (%)', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0',
+                        range: [-10, 110] 
+                    },
+                    camera: { eye: {x: 1.5, y: 1.5, z: 0.5} } // Isometric starting view
+                },
+                legend: { font: { color: fontColor }, x: 0, y: 1 }
+            };
 
-        function updateChartTheme() {
-            if(globalState.smoke !== 'inactive') {
-                renderChart(globalState.smoke === 'failure' || globalState.regression === 'failure' ? 85 : 100);
-            }
+            Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
         }
     </script>
 </body>
