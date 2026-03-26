@@ -533,11 +533,10 @@
                 xAxis3D: {
                     type: 'time', 
                     name: 'Timeline', 
-                    nameGap: 35, // 1. Pushes the word "Timeline" further away from the axis
+                    nameGap: 35, 
                     nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' },
                     axisLabel: { 
-                        margin: 12, // Pushes labels slightly away from the line
-                        // 2. Use a function formatter to fix the literal "{a}" bug in WebGL
+                        margin: 12,
                         formatter: function (value) {
                             let date = new Date(value);
                             let hours = date.getHours();
@@ -550,9 +549,31 @@
                         color: '#f59e0b', 
                         fontWeight: '600' 
                     },
-                    // 3. Hide the blue exact-time hover label (your main tooltip already shows this)
+                    // THE FIX: Turn label back on, but give it a solid background to block underlying text
                     axisPointer: {
-                        label: { show: false }
+                        label: { 
+                            show: true,
+                            backgroundColor: isDark ? '#0f172a' : '#ffffff', // Solid background adapts to theme
+                            borderColor: '#0ea5e9',
+                            borderWidth: 2,
+                            padding: [6, 10],
+                            textStyle: {
+                                color: '#0ea5e9', // Blue text
+                                fontWeight: 'bold',
+                                fontSize: 13
+                            },
+                            // Format the hover time to look clean
+                            formatter: function (params) {
+                                let date = new Date(params.value);
+                                let hours = date.getHours();
+                                let minutes = date.getMinutes().toString().padStart(2, '0');
+                                let seconds = date.getSeconds().toString().padStart(2, '0');
+                                let ampm = hours >= 12 ? 'PM' : 'AM';
+                                hours = hours % 12;
+                                hours = hours ? hours : 12;
+                                return `${hours}:${minutes}:${seconds} ${ampm}`;
+                            }
+                        }
                     },
                     splitLine: { lineStyle: { color: gridColor } },
                     axisLine: { lineStyle: { color: axisLineColor } }
@@ -560,12 +581,16 @@
                 yAxis3D: {
                     type: 'value', name: '', min: -0.2, max: 1.2, splitNumber: 1,
                     axisLabel: { formatter: (val) => val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : ''), color: fontColor, fontWeight: 'bold' },
+                    // Hide the pointer label on this axis to prevent the floating "1"
+                    axisPointer: { label: { show: false } }, 
                     splitLine: { lineStyle: { color: gridColor } },
                     axisLine: { lineStyle: { color: axisLineColor } }
                 },
                 zAxis3D: {
                     type: 'value', name: '', min: -0.2, max: 1.2, splitNumber: 1,
                     axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' },
+                    // Hide the pointer label on this axis to prevent the floating "1"
+                    axisPointer: { label: { show: false } },
                     splitLine: { lineStyle: { color: gridColor } },
                     axisLine: { lineStyle: { color: axisLineColor } }
                 },
