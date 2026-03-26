@@ -542,35 +542,48 @@
                             let hours = date.getHours();
                             let minutes = date.getMinutes().toString().padStart(2, '0');
                             let ampm = hours >= 12 ? 'PM' : 'AM';
-                            hours = hours % 12;
-                            hours = hours ? hours : 12;
+                            hours = hours % 12 || 12;
                             return `${hours}:${minutes} ${ampm}`;
                         }, 
                         color: '#f59e0b', 
                         fontWeight: '600' 
                     },
-                    // THE FIX: Turn label back on, but give it a solid background to block underlying text
                     axisPointer: {
                         label: { 
                             show: true,
-                            backgroundColor: isDark ? '#0f172a' : '#ffffff', // Solid background adapts to theme
+                            backgroundColor: isDark ? '#0f172a' : '#ffffff',
                             borderColor: '#0ea5e9',
                             borderWidth: 2,
                             padding: [6, 10],
                             textStyle: {
-                                color: '#0ea5e9', // Blue text
+                                color: '#0ea5e9', 
                                 fontWeight: 'bold',
                                 fontSize: 13
                             },
-                            // Format the hover time to look clean
                             formatter: function (params) {
-                                let date = new Date(params.value);
+                                // 1. Extract the value safely
+                                let rawValue = params.value !== undefined ? params.value : params;
+                                
+                                // 2. Fix ECharts string formatting for JS Date compatibility
+                                if (typeof rawValue === 'string') {
+                                    // Converts "2026-03-26 20:18:58" -> "2026-03-26T20:18:58"
+                                    rawValue = rawValue.replace(' ', 'T');
+                                }
+                                
+                                let date = new Date(rawValue);
+                                
+                                // 3. Fallback just in case ECharts passes something totally unreadable
+                                if (isNaN(date.getTime())) {
+                                    return typeof params.value !== 'undefined' ? params.value : String(params);
+                                }
+                                
+                                // 4. Format cleanly
                                 let hours = date.getHours();
                                 let minutes = date.getMinutes().toString().padStart(2, '0');
                                 let seconds = date.getSeconds().toString().padStart(2, '0');
                                 let ampm = hours >= 12 ? 'PM' : 'AM';
-                                hours = hours % 12;
-                                hours = hours ? hours : 12;
+                                hours = hours % 12 || 12; // 0 becomes 12
+                                
                                 return `${hours}:${minutes}:${seconds} ${ampm}`;
                             }
                         }
