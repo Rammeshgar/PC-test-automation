@@ -11,20 +11,21 @@
     
     <style>
         :root {
-            --bg-color: #f0f8ff;
-            --text-main: #0f172a; --text-muted: #475569;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(14, 165, 233, 0.4);
+            /* Soothing Soft Clinical Slate (No more blinding white!) */
+            --bg-color: #cddbe8; 
+            --text-main: #0f172a; --text-muted: #334155;
+            --card-bg: rgba(255, 255, 255, 0.45); /* Much more transparent */
+            --card-border: rgba(14, 165, 233, 0.3);
             
             --pass-color: #10b981; /* Neon Green */
             --fail-color: #ef4444; /* Alert Red */
-            --inactive-color: #94a3b8;
+            --inactive-color: #64748b;
             --accent-blue: #0ea5e9;
             --accent-purple: #8b5cf6;
             
-            --shadow: 0 15px 35px rgba(14, 165, 233, 0.15);
-            --title-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
-            --graph-bg: rgba(255, 255, 255, 0.05); /* Reduced brightness for light theme */
+            --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); /* Softer shadow */
+            --title-gradient: linear-gradient(90deg, #0284c7, #2563eb);
+            --graph-bg: rgba(255, 255, 255, 0.1); /* Extremely subtle graph box */
         }
 
         [data-theme="dark"] {
@@ -40,15 +41,16 @@
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
+        /* Strict Fit-to-Screen Architecture */
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
             height: 100vh; width: 100vw;
-            overflow: hidden; /* Lock scroll on desktop */
+            overflow: hidden; /* Absolutely no scrolling on desktop */
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
 
-        #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.6; pointer-events: none; }
+        #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
         /* Header */
         header {
@@ -60,20 +62,19 @@
         .logo-container img { height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; text-align: center; flex-grow: 1; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
+        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
 
         .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
         .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
-        /* Dashboard Grid */
+        /* Main Dashboard Grid */
         .dashboard-layout {
             flex: 1 1 0; display: flex; gap: 25px; padding: 25px;
             max-width: 1800px; margin: 0 auto; width: 100%; height: 100%;
         }
 
-        /* Cards Column (Overflow Visible allows tooltip to escape) */
         .cards-column {
-            flex: 0 0 380px; display: flex; flex-direction: column; gap: 25px;
+            flex: 0 0 400px; display: flex; flex-direction: column; gap: 25px;
             height: 100%; overflow: visible; z-index: 30;
         }
 
@@ -90,16 +91,16 @@
         }
 
         .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); }
-        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; }
+        .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); font-weight: 700;}
+        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; font-weight: 700;}
         
-        /* Fixed Tooltip - Aligned to Left to prevent cutting off */
+        /* Fixed Tooltip */
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
             border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
-            position: absolute; top: 130%; left: 0; /* Anchor to the left side of the icon */
+            position: absolute; top: 130%; left: 0; 
             background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
             transition: all 0.3s; z-index: 9999; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4;
         }
@@ -113,10 +114,10 @@
         .heartbeat-icon { width: 45px; height: 22px; overflow: visible; }
         .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
 
-        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.3); text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);}
+        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.3); text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);}
         .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; filter: drop-shadow(0 0 4px var(--pass-color)); }
 
-        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.3); text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);}
+        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.3); text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);}
         .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; filter: drop-shadow(0 0 4px var(--fail-color)); }
 
         .status-inactive { color: var(--inactive-color); }
@@ -135,7 +136,7 @@
             background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--card-border); padding: 12px 25px; border-radius: 30px;
             box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;
-            font-weight: 600; font-size: 0.95rem; z-index: 9999; /* Always on top */
+            font-weight: 600; font-size: 0.95rem; z-index: 9999;
         }
         .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
@@ -144,7 +145,7 @@
         /* Mobile */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; }
-            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px;} /* Room for widget */
+            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px;}
             .cards-column { flex: 0 0 auto; width: 100%; padding-right: 0; }
             .chart-section { min-height: 500px; flex: 0 0 auto; }
         }
@@ -166,11 +167,10 @@
     </header>
 
     <div class="dashboard-layout">
-        <!-- Cards Column -->
         <div class="cards-column">
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
-                    <h2>💨 Smoke Test</h2>
+                    <h2>💨 Smoke Monitoring</h2>
                     <div class="info-icon">i
                         <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span>
                     </div>
@@ -209,7 +209,6 @@
             </div>
         </div>
 
-        <!-- Chart Column -->
         <div class="chart-section">
             <div class="title-wrapper">
                 <h2>📊 Live Global Stability Matrix</h2>
@@ -221,7 +220,6 @@
         </div>
     </div>
 
-    <!-- Floating Bottom Left Status Widget -->
     <div class="global-status-widget">
         <div class="status-led" id="global-led"></div>
         <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
@@ -367,7 +365,7 @@
         }
         setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 4. Plotly 3D Graph ---
+        // --- 4. Plotly 3D Graph (Clean Native Texts) ---
         window.render3DChart = function() {
             if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
 
@@ -376,10 +374,11 @@
             let gridColor = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.15)';
             let passColor = '#10b981'; // Neon Green
             let failColor = '#ef4444'; // Neon Red
+            let graphBoxColor = isDark ? 'rgba(15,23,42,0.3)' : 'rgba(255,255,255,0.05)'; /* Extremely soft box */
 
             var traceSmoke = {
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
-                mode: 'lines+markers', name: 'Smoke Test',
+                mode: 'lines+markers', name: 'Smoke Monitoring',
                 line: { width: 6, color: '#0ea5e9' }, 
                 marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 1.5, color: '#fff'} },
                 text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
@@ -399,9 +398,9 @@
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
                     xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 12 }, gridcolor: gridColor, showbackground: false },
-                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke Test', 'Regression'], showbackground: false },
-                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.3)' : 'rgba(255,255,255,0.05)' },
-                    camera: { eye: {x: -1.3, y: -1.8, z: 0.3} }
+                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
+                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: graphBoxColor },
+                    camera: { eye: {x: -1.4, y: -1.9, z: 0.4} }
                 },
                 legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
@@ -422,7 +421,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
 
             const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
-            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.2 });
+            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.1 });
 
             planeMesh = new THREE.Mesh(geometry, material);
             planeMesh.rotation.x = -Math.PI / 2.5; 
@@ -439,7 +438,8 @@
         }
 
         window.update3DBackgroundTheme = function(theme) {
-            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.25;
+            // Drop opacity massively in Light mode to prevent eye strain
+            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.08;
         };
 
         function animate3D() {
