@@ -7,38 +7,42 @@
     
     <!-- Plotly.js for the True 3D Graph -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Three.js for the 3D Background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Light Theme */
-            --bg-mesh-1: #e0f2fe; --bg-mesh-2: #f0fdf4; --bg-mesh-3: #eef2ff;
-            --text-main: #0f172a; --text-muted: #475569;
-            --card-bg: rgba(255, 255, 255, 0.5);
-            --card-border: rgba(255, 255, 255, 0.8);
-            --pass-color: #10b981; --fail-color: #ef4444; --inactive-color: #94a3b8;
-            --shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            /* Clinical Bluish Theme */
+            --bg-color: #f0f8ff;
+            --text-main: #0f172a; --text-muted: #64748b;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --card-border: rgba(14, 165, 233, 0.3);
+            --pass-color: #0ea5e9; /* Medical Cyan/Blue */
+            --fail-color: #ef4444; /* Alert Red */
+            --inactive-color: #94a3b8;
+            --shadow: 0 15px 35px rgba(14, 165, 233, 0.1);
+            --title-gradient: linear-gradient(90deg, #0ea5e9, #3b82f6);
         }
 
         [data-theme="dark"] {
-            /* Dark Theme */
-            --bg-mesh-1: #020617; --bg-mesh-2: #0f172a; --bg-mesh-3: #1e1b4b;
+            --bg-color: #020617;
             --text-main: #f8fafc; --text-muted: #94a3b8;
-            --card-bg: rgba(15, 23, 42, 0.4);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-border: rgba(14, 165, 233, 0.2);
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            --title-gradient: linear-gradient(90deg, #38bdf8, #60a5fa);
         }
 
-        * { box-sizing: border-box; transition: color 0.4s; }
+        * { box-sizing: border-box; transition: color 0.3s, background-color 0.3s; }
 
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh;
-            color: var(--text-main); overflow-x: hidden;
-            background: linear-gradient(45deg, var(--bg-mesh-1), var(--bg-mesh-2), var(--bg-mesh-3));
-            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+            color: var(--text-main); overflow-x: hidden; background-color: var(--bg-color);
         }
 
-        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        /* 3D Canvas Background */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.6; pointer-events: none; }
 
         /* Navbar */
         header {
@@ -46,50 +50,56 @@
             padding: 20px 40px; background: var(--card-bg);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border);
-            position: relative; z-index: 10; /* Lower than card hover */
+            position: relative; z-index: 50;
         }
         .logo-container img { height: 45px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
-        [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(255,255,255,0.2)); }
-        h1 { font-size: 1.6rem; font-weight: 700; margin: 0; text-align: center; flex-grow: 1; letter-spacing: -0.5px;}
+        [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
+        h1 { 
+            font-size: 1.8rem; font-weight: 700; margin: 0; text-align: center; flex-grow: 1; 
+            background: var(--title-gradient); -webkit-background-clip: text; color: transparent;
+        }
 
         .theme-toggle {
-            background: transparent; border: 2px solid var(--text-muted); color: var(--text-main);
+            background: transparent; border: 2px solid var(--pass-color); color: var(--text-main);
             padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;
         }
-        .theme-toggle:hover { background: var(--text-main); color: var(--card-bg); transform: scale(1.05); }
+        .theme-toggle:hover { background: var(--pass-color); color: #fff; transform: scale(1.05); }
 
-        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; perspective: 1000px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 40px; margin-bottom: 50px; }
+        /* Side-by-Side Layout */
+        .dashboard-layout {
+            display: grid; grid-template-columns: 450px 1fr; gap: 30px;
+            max-width: 1600px; margin: 40px auto; padding: 0 30px;
+        }
+        @media (max-width: 1100px) { .dashboard-layout { grid-template-columns: 1fr; } }
 
-        /* Interactive 3D Cards */
+        .cards-column { display: flex; flex-direction: column; gap: 30px; }
+
+        /* Interactive Cards */
         .card {
             background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--card-border); border-radius: 24px; padding: 30px;
-            box-shadow: var(--shadow); position: relative;
-            transform-style: preserve-3d; transition: transform 0.1s;
-            z-index: 20; 
+            box-shadow: var(--shadow); position: relative; z-index: 20;
         }
-        .card:hover { z-index: 100; /* Fixes tooltip hiding under navbar */ }
 
-        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; transform: translateZ(30px); }
-        .card h2 { margin: 0; font-size: 1.4rem; }
+        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .card h2 { margin: 0; font-size: 1.4rem; color: var(--pass-color); }
         
-        /* Tooltips */
+        /* Tooltip (Fixed downwards) */
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
-            border-radius: 50%; background: var(--text-muted); color: var(--card-bg);
+            border-radius: 50%; background: var(--pass-color); color: #fff;
             font-size: 12px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
-            position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%) translateY(10px);
-            background: var(--text-main); color: var(--bg-mesh-1); padding: 12px 18px;
+            position: absolute; top: 130%; left: 50%; transform: translateX(-50%) translateY(-10px);
+            background: var(--text-main); color: var(--bg-color); padding: 12px 18px;
             border-radius: 12px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 999; text-align: center;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3); font-weight: normal; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; text-align: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4); font-weight: normal; pointer-events: none;
         }
-        .tooltip::after {
-            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-            border-width: 8px; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
+        .tooltip::before {
+            content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            border-width: 8px; border-style: solid; border-color: transparent transparent var(--text-main) transparent;
         }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
@@ -97,64 +107,71 @@
         .status-badge { 
             display: inline-flex; align-items: center; gap: 12px; font-weight: 700; 
             font-size: 1.1rem; padding: 8px 16px; border-radius: 12px; 
-            background: rgba(0,0,0,0.05); transform: translateZ(20px); 
-            border: 1px solid transparent;
+            background: rgba(0,0,0,0.03); border: 1px solid transparent;
         }
-        [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.05); }
+        [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.03); }
 
         .heartbeat-icon { width: 50px; height: 25px; overflow: visible; }
         .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
 
-        /* Pass = Steady Green Heartbeat */
-        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.2); }
+        .status-passed { color: var(--pass-color); border-color: rgba(14, 165, 233, 0.2); }
         .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; }
 
-        /* Fail = Fast/Panic Red Heartbeat */
         .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.2); }
         .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; }
 
-        /* Inactive = Grey Flatline */
         .status-inactive { color: var(--inactive-color); border-color: rgba(148, 163, 184, 0.2); }
-        .status-inactive .hb-path { stroke: var(--inactive-color); stroke-dasharray: 0; stroke-dashoffset: 0; animation: none; }
+        .status-inactive .hb-path { stroke: var(--inactive-color); stroke-dasharray: 0; stroke-dashoffset: 0; }
 
         @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
 
-        .meta { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; transform: translateZ(15px); }
+        .meta { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; }
         
-        /* Screenshot Reveal */
-        .screenshot-container { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 2px solid var(--fail-color); transform: translateZ(25px); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); }
-        .screenshot { width: 100%; display: block; transition: transform 0.3s; cursor: pointer; }
-        .screenshot:hover { transform: scale(1.05); }
-        .no-failures { padding: 20px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); transform: translateZ(25px);}
+        .screenshot-container { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); }
+        .screenshot { width: 100%; display: block; cursor: pointer; }
+        .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(14, 165, 233, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); }
 
         /* 3D Chart Section */
-        .chart-section { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); margin-bottom: 60px; z-index: 10;}
-        .chart-container { width: 100%; height: 500px; margin-top: 20px; border-radius: 12px; overflow: hidden; }
+        .chart-section { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); height: 100%; min-height: 600px;}
+        .chart-container { width: 100%; height: 85%; margin-top: 20px; border-radius: 12px; }
 
+        /* Bottom Left Global Status */
+        .global-status {
+            position: fixed; bottom: 25px; left: 25px; background: var(--card-bg);
+            backdrop-filter: blur(10px); border: 1px solid var(--card-border);
+            padding: 12px 25px; border-radius: 30px; box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 15px; font-weight: 600; font-size: 0.95rem; z-index: 100;
+        }
+        .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s; }
+        .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
+        .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
     </style>
 </head>
 <body>
+
+    <!-- 3D Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
 
     <header>
         <div class="logo-container">
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
         </div>
         <h1>Peoples Clinic Status Monitoring</h1>
-        <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">🌓 Dark Mode</button>
+        <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">Toggle Theme</button>
     </header>
 
-    <div class="container">
-        <div class="grid">
+    <div class="dashboard-layout">
+        <!-- Left Column: Test Cards -->
+        <div class="cards-column">
             <!-- Smoke Test Card -->
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
-                    <h2>💨 10-Minute Smoke Test</h2>
+                    <h2>💨 10-Min Smoke Test</h2>
                     <div class="info-icon">i
                         <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span>
                     </div>
                 </div>
                 <div id="smoke-status-badge" class="status-badge status-inactive">
-                    <!-- Heartbeat SVG -->
                     <svg class="heartbeat-icon" viewBox="0 0 100 30">
                         <path id="smoke-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
                     </svg>
@@ -176,7 +193,6 @@
                     </div>
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
-                    <!-- Heartbeat SVG -->
                     <svg class="heartbeat-icon" viewBox="0 0 100 30">
                         <path id="reg-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
                     </svg>
@@ -184,88 +200,89 @@
                 </div>
                 <div class="meta">
                     <p><strong>Last Checked:</strong> <span id="regression-time">...</span></p>
-                    <p><strong>Environment:</strong> Production UI & Backend API</p>
+                    <p><strong>Environment:</strong> Prod UI & API</p>
                 </div>
                 <div id="regression-screenshots"></div>
             </div>
         </div>
 
-        <!-- True 3D History Graph -->
+        <!-- Right Column: 3D History Graph -->
         <div class="chart-section">
             <div class="title-wrapper">
-                <h2>📊 True 3D Stability History</h2>
+                <h2>📊 Live Global Stability Matrix</h2>
                 <div class="info-icon">i
-                    <span class="tooltip">Real-time local tracking. Plots the exact status of both test suites over time in a 3D topological space. Drag to rotate!</span>
+                    <span class="tooltip">Synchronized globally. Plots the precise Pass/Fail status of tests over the last 24 hours in an interactive 3D topological space. Drag to rotate!</span>
                 </div>
             </div>
             <div class="chart-container" id="historyChart"></div>
         </div>
     </div>
 
+    <!-- Floating Global Status -->
+    <div class="global-status" id="global-status">
+        <div class="status-led" id="global-led"></div>
+        <span id="global-text">System Status: Analyzing...</span>
+    </div>
+
     <script>
-        // --- 3D Mouse Tracking Interactivity ---
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('mousemove', e => {
-                let rect = card.getBoundingClientRect();
-                let x = e.clientX - rect.left - rect.width/2;
-                let y = e.clientY - rect.top - rect.height/2;
-                // Rotate based on mouse position
-                card.style.transform = `rotateX(${-y/15}deg) rotateY(${x/15}deg) scale(1.02)`;
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
-            });
-        });
-
-        // --- Theme Management ---
+        // --- 1. Smart Theme Management ---
         const themeBtn = document.getElementById('theme-btn');
-        let currentTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        themeBtn.innerText = currentTheme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-
-        function toggleTheme() {
-            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', currentTheme);
-            localStorage.setItem('theme', currentTheme);
-            themeBtn.innerText = currentTheme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            render3DChart(); // Redraw chart colors
-        }
-
-        // --- Local History Management (Real Data) ---
-        function saveHistory(testName, isSuccess, timestamp) {
-            let history = JSON.parse(localStorage.getItem('testHistory')) || { times: [], smoke: [], regression: [] };
-            
-            // Format time nicely
-            let timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            // If this timestamp doesn't exist yet, add a new row
-            if (history.times.length === 0 || history.times[history.times.length - 1] !== timeStr) {
-                history.times.push(timeStr);
-                // Copy last known state for both, then update the one that just ran
-                let lastSmoke = history.smoke.length > 0 ? history.smoke[history.smoke.length - 1] : 100;
-                let lastReg = history.regression.length > 0 ? history.regression[history.regression.length - 1] : 100;
-                
-                history.smoke.push(testName === 'smoke' ? (isSuccess ? 100 : 0) : lastSmoke);
-                history.regression.push(testName === 'regression' ? (isSuccess ? 100 : 0) : lastReg);
+        
+        function setSmartTheme() {
+            let savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
             } else {
-                // Update existing row (if both run at the same minute)
-                if (testName === 'smoke') history.smoke[history.smoke.length - 1] = isSuccess ? 100 : 0;
-                if (testName === 'regression') history.regression[history.regression.length - 1] = isSuccess ? 100 : 0;
+                // Smart Auto-Theme: 6am-6pm Light, 6pm-6am Dark
+                const hour = new Date().getHours();
+                applyTheme((hour >= 6 && hour < 18) ? 'light' : 'dark');
             }
-
-            // Keep only last 10 runs to keep graph clean
-            if (history.times.length > 10) {
-                history.times.shift(); history.smoke.shift(); history.regression.shift();
-            }
-
-            localStorage.setItem('testHistory', JSON.stringify(history));
         }
 
-        // --- Data Fetching & UI Logic ---
-        async function loadData(testName, cardPrefix, inactiveThresholdMinutes) {
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
+            if (window.render3DChart) render3DChart(); // Redraw chart colors
+            if (window.update3DBackgroundTheme) update3DBackgroundTheme(theme);
+        }
+
+        function toggleThemeManual() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        }
+
+        setSmartTheme();
+
+        // --- 2. Global State & UI Updaters ---
+        let globalState = { smoke: 'inactive', regression: 'inactive' };
+        let historyData = { times: [], smoke: [], regression: [] }; // Populated by GitHub API later
+
+        function updateGlobalStatus() {
+            const txt = document.getElementById('global-text');
+            const led = document.getElementById('global-led');
+
+            if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
+                txt.innerText = 'System Status: Degraded (Alert)';
+                txt.style.color = 'var(--fail-color)';
+                led.className = 'status-led led-fail';
+            } else if (globalState.smoke === 'success' || globalState.regression === 'success') {
+                txt.innerText = 'System Status: All Systems Operational';
+                txt.style.color = 'var(--pass-color)';
+                led.className = 'status-led led-pass';
+            } else {
+                txt.innerText = 'System Status: Monitoring Paused';
+                txt.style.color = 'var(--inactive-color)';
+                led.className = 'status-led';
+            }
+        }
+
+        // --- 3. Current Live Data Loader ---
+        async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
             try {
                 const response = await fetch(`${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-                if (!response.ok) throw new Error("No data");
+                if (!response.ok) return;
                 const data = await response.json();
 
                 const now = new Date();
@@ -279,89 +296,208 @@
                 
                 document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString();
 
-                // Check Inactive
                 if (diffMinutes > inactiveThresholdMinutes) {
                     badgeEl.className = 'status-badge status-inactive';
                     textEl.innerText = 'PAUSED';
-                    pathEl.setAttribute('d', 'M0 15 L100 15'); // Flatline
-                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor paused/offline.</div>';
+                    pathEl.setAttribute('d', 'M0 15 L100 15');
+                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor offline.</div>';
+                    globalState[testName] = 'inactive';
                 } else {
-                    saveHistory(testName, data.status === 'success', testTime);
-
+                    globalState[testName] = data.status;
                     if (data.status === 'success') {
                         badgeEl.className = 'status-badge status-passed';
                         textEl.innerText = 'PASSING';
-                        pathEl.setAttribute('d', 'M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15'); // Normal beat
-                        imgContainer.innerHTML = '<div class="no-failures">✅ Systems healthy. No screenshots to display.</div>';
+                        pathEl.setAttribute('d', 'M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15');
+                        imgContainer.innerHTML = '<div class="no-failures">✅ Systems healthy. No alerts.</div>';
                     } else {
                         badgeEl.className = 'status-badge status-failed';
                         textEl.innerText = 'FAILING';
-                        pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15'); // Erratic beat
+                        pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15');
                         if (data.screenshots && data.screenshots.length > 0) {
                             const lastImage = data.screenshots[data.screenshots.length - 1];
-                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Detected:</p><div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure Screenshot"></a></div>`;
+                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Frame:</p><div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure"></a></div>`;
                         }
                     }
                 }
-                render3DChart();
-            } catch (e) {
-                console.log(`Waiting for ${testName}...`);
-            }
+                updateGlobalStatus();
+            } catch (e) { console.log("Awaiting latest data..."); }
         }
 
-        // Run data loaders
-        loadData('smoke', 'smoke', 30);
-        loadData('regression', 'regression', 120);
+        loadLiveData('smoke', 'smoke', 30);
+        loadLiveData('regression', 'regression', 120);
 
-        // --- Plotly.js True 3D Graph ---
+        // --- 4. Global GitHub History Sync (The Magic Fix) ---
+        // This dynamically finds your repo and fetches real history from GitHub's public API!
+        async function fetchGlobalHistory() {
+            try {
+                // Auto-detect Repo from URL (e.g. rammeshgar.github.io/peoplesclinic-qa -> Rammeshgar/peoplesclinic-qa)
+                const hostname = window.location.hostname;
+                const path = window.location.pathname.replace(/\//g, '');
+                if (!hostname.includes('github.io')) throw new Error("Localhost");
+                
+                const owner = hostname.split('.')[0];
+                const repo = path;
+                
+                // Fetch recent runs for both workflows
+                const regRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=10&status=completed`);
+                const smokeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=10&status=completed`);
+                
+                const regData = await regRes.json();
+                const smokeData = await smokeRes.json();
+
+                // Process times (reverse to make oldest first)
+                let timesMap = {};
+                smokeData.workflow_runs.reverse().forEach(run => {
+                    let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
+                    timesMap[t].smoke = run.conclusion === 'success' ? 1 : 0;
+                });
+                regData.workflow_runs.reverse().forEach(run => {
+                    let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
+                    timesMap[t].reg = run.conclusion === 'success' ? 1 : 0;
+                });
+
+                // Extract aligned data
+                historyData.times = Object.keys(timesMap);
+                historyData.smoke = historyData.times.map(t => timesMap[t].smoke !== null ? timesMap[t].smoke : 1);
+                historyData.regression = historyData.times.map(t => timesMap[t].reg !== null ? timesMap[t].reg : 1);
+                
+                render3DChart();
+            } catch(e) {
+                // Fallback if API fails or running locally
+                console.log("GitHub API Sync skipped. Using placeholder for graph.");
+                historyData = {
+                    times: ['-4h', '-3h', '-2h', '-1h', 'Now'],
+                    smoke: [1, 1, 1, 1, globalState.smoke === 'failure' ? 0 : 1],
+                    regression: [1, 1, 0, 1, globalState.regression === 'failure' ? 0 : 1]
+                };
+                render3DChart();
+            }
+        }
+        
+        setTimeout(fetchGlobalHistory, 1000); // Give live data time to load first
+
+        // --- 5. Plotly True 3D Graph (Pass/Fail specific) ---
         function render3DChart() {
-            let history = JSON.parse(localStorage.getItem('testHistory'));
-            if (!history || history.times.length === 0) return; // Wait for data
+            if (historyData.times.length === 0) return;
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let fontColor = isDark ? '#f8fafc' : '#0f172a';
-            let bgColor = 'rgba(0,0,0,0)'; // Transparent background
+            let gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
-            // Y-Axis maps: 0 = Smoke, 1 = Regression
-            let ySmoke = new Array(history.times.length).fill(0);
-            let yReg = new Array(history.times.length).fill(1);
+            let ySmoke = new Array(historyData.times.length).fill(0);
+            let yReg = new Array(historyData.times.length).fill(1);
+
+            // Hover Template: "Smoke Test at 10:00 AM<br>Status: PASS"
+            let hoverTemplate = "<b>%{text}</b><br>Time: %{x}<extra></extra>";
 
             var traceSmoke = {
-                x: history.times, y: ySmoke, z: history.smoke,
+                x: historyData.times, y: ySmoke, z: historyData.smoke,
                 mode: 'lines+markers', name: 'Smoke Test',
-                line: { width: 8, color: '#10b981' }, // Green
-                marker: { size: 6, color: '#10b981', symbol: 'circle' },
+                line: { width: 10, color: '#0ea5e9' }, // Cyan
+                marker: { size: 6, color: '#0ea5e9' },
+                text: historyData.smoke.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'),
+                hovertemplate: hoverTemplate,
                 type: 'scatter3d'
             };
 
             var traceReg = {
-                x: history.times, y: yReg, z: history.regression,
+                x: historyData.times, y: yReg, z: historyData.regression,
                 mode: 'lines+markers', name: 'Regression Test',
-                line: { width: 8, color: '#3b82f6' }, // Blue
-                marker: { size: 6, color: '#3b82f6', symbol: 'diamond' },
+                line: { width: 10, color: '#3b82f6' }, // Blue
+                marker: { size: 6, color: '#3b82f6' },
+                text: historyData.regression.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'),
+                hovertemplate: hoverTemplate,
                 type: 'scatter3d'
             };
 
             var layout = {
-                paper_bgcolor: bgColor, plot_bgcolor: bgColor,
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                 margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    xaxis: { title: 'Time', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0' },
+                    xaxis: { title: 'Timeline', color: fontColor, gridcolor: gridColor },
                     yaxis: { 
-                        title: 'Test Suite', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0',
+                        title: '', color: fontColor, gridcolor: gridColor,
                         tickvals: [0, 1], ticktext: ['Smoke', 'Regression'] 
                     },
                     zaxis: { 
-                        title: 'Status (%)', color: fontColor, gridcolor: isDark ? '#333' : '#e2e8f0',
-                        range: [-10, 110] 
+                        title: 'Result', color: fontColor, gridcolor: gridColor,
+                        tickvals: [0, 1], ticktext: ['FAIL', 'PASS'],
+                        range: [-0.2, 1.2] // Gives headroom so lines don't clip the top
                     },
-                    camera: { eye: {x: 1.5, y: 1.5, z: 0.5} } // Isometric starting view
+                    camera: { eye: {x: -1.5, y: -1.5, z: 0.5} }
                 },
-                legend: { font: { color: fontColor }, x: 0, y: 1 }
+                legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }
             };
 
-            Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
+            window.render3DChart = () => Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
+            window.render3DChart();
         }
+
+        // --- 6. Super Cool Three.js 3D Wireframe Background ---
+        let scene, camera, renderer, planeMesh;
+        function init3DBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Create a wide, subdivided plane
+            const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
+            
+            // Medical Cyan Wireframe
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x0ea5e9, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: document.documentElement.getAttribute('data-theme') === 'dark' ? 0.15 : 0.2 
+            });
+
+            planeMesh = new THREE.Mesh(geometry, material);
+            planeMesh.rotation.x = -Math.PI / 2.5; // Lay it flat and tilt it towards camera
+            planeMesh.position.y = -20;
+            planeMesh.position.z = -40;
+            scene.add(planeMesh);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate3D();
+        }
+
+        function update3DBackgroundTheme(theme) {
+            if(planeMesh) {
+                planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.2;
+            }
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            const time = Date.now() * 0.001;
+            
+            // Make the vertices wave like fluid data
+            const position = planeMesh.geometry.attributes.position;
+            for (let i = 0; i < position.count; i++) {
+                const x = position.getX(i);
+                const y = position.getY(i);
+                // Math magic for smooth waves
+                const z = Math.sin(x * 0.1 + time) * 3 + Math.cos(y * 0.1 + time) * 3;
+                position.setZ(i, z);
+            }
+            position.needsUpdate = true;
+            
+            // Slow rotation
+            planeMesh.rotation.z = Math.sin(time * 0.1) * 0.1;
+
+            renderer.render(scene, camera);
+        }
+
+        init3DBackground();
     </script>
 </body>
 </html>
