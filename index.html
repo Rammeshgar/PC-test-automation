@@ -5,105 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peoples Clinic Status Monitoring</title>
     
-    <!-- Plotly.js for the True 3D Graph -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <!-- Three.js for the 3D Background -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Clinical Bluish Theme */
-            --bg-color: #f0f8ff;
-            --text-main: #0f172a; --text-muted: #64748b;
-            --card-bg: rgba(255, 255, 255, 0.6);
-            --card-border: rgba(14, 165, 233, 0.3);
-            --pass-color: #0ea5e9; /* Medical Cyan/Blue */
+            /* Bluish Theme Foundation */
+            --bg-color: #e0f2fe;
+            --text-main: #0f172a; --text-muted: #475569;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --card-border: rgba(14, 165, 233, 0.4);
+            
+            /* Status Colors (Green/Red) */
+            --pass-color: #10b981; /* Neon Green */
             --fail-color: #ef4444; /* Alert Red */
             --inactive-color: #94a3b8;
-            --shadow: 0 15px 35px rgba(14, 165, 233, 0.1);
-            --title-gradient: linear-gradient(90deg, #0ea5e9, #3b82f6);
+            
+            /* Accents */
+            --accent-blue: #0ea5e9;
+            --shadow: 0 15px 35px rgba(14, 165, 233, 0.15);
+            --title-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
+            --graph-bg: rgba(255, 255, 255, 0.4);
         }
 
         [data-theme="dark"] {
             --bg-color: #020617;
             --text-main: #f8fafc; --text-muted: #94a3b8;
-            --card-bg: rgba(15, 23, 42, 0.6);
-            --card-border: rgba(14, 165, 233, 0.2);
-            --shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-            --title-gradient: linear-gradient(90deg, #38bdf8, #60a5fa);
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --card-border: rgba(14, 165, 233, 0.3);
+            
+            --pass-color: #10b981;
+            --fail-color: #ef4444;
+            
+            --accent-blue: #38bdf8;
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+            --title-gradient: linear-gradient(90deg, #38bdf8, #818cf8);
+            --graph-bg: rgba(10, 15, 30, 0.6);
         }
 
-        * { box-sizing: border-box; transition: color 0.3s, background-color 0.3s; }
+        * { box-sizing: border-box; transition: background-color 0.4s ease, color 0.4s ease; }
 
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0; min-height: 100vh;
             color: var(--text-main); overflow-x: hidden; background-color: var(--bg-color);
         }
 
-        /* 3D Canvas Background */
-        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.6; pointer-events: none; }
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.5; pointer-events: none; }
 
         /* Navbar */
         header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 40px; background: var(--card-bg);
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+            padding: 20px 5%; background: var(--card-bg);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border);
-            position: relative; z-index: 50;
+            position: relative; z-index: 50; box-shadow: var(--shadow);
         }
-        .logo-container img { height: 45px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
+        .logo-container img { height: 45px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
+        .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
         h1 { 
-            font-size: 1.8rem; font-weight: 700; margin: 0; text-align: center; flex-grow: 1; 
+            font-size: clamp(1.2rem, 2vw, 1.8rem); font-weight: 700; margin: 0; text-align: center; flex-grow: 1; 
             background: var(--title-gradient); -webkit-background-clip: text; color: transparent;
         }
 
         .theme-toggle {
-            background: transparent; border: 2px solid var(--pass-color); color: var(--text-main);
-            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;
+            background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main);
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; 
         }
-        .theme-toggle:hover { background: var(--pass-color); color: #fff; transform: scale(1.05); }
+        .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
-        /* Side-by-Side Layout */
+        /* Responsive Layout */
         .dashboard-layout {
-            display: grid; grid-template-columns: 450px 1fr; gap: 30px;
-            max-width: 1600px; margin: 40px auto; padding: 0 30px;
+            display: grid; grid-template-columns: 1fr 2fr; gap: 30px;
+            width: 95%; max-width: 1600px; margin: 40px auto; padding-bottom: 80px;
         }
-        @media (max-width: 1100px) { .dashboard-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 1100px) { 
+            .dashboard-layout { grid-template-columns: 1fr; } 
+            .chart-section { min-height: 500px; }
+        }
 
         .cards-column { display: flex; flex-direction: column; gap: 30px; }
 
-        /* Interactive Cards */
-        .card {
-            background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        /* Enhanced Glass Cards */
+        .card, .chart-section {
+            background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--card-border); border-radius: 24px; padding: 30px;
             box-shadow: var(--shadow); position: relative; z-index: 20;
+            background-image: radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent);
         }
 
         .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .card h2 { margin: 0; font-size: 1.4rem; color: var(--pass-color); }
+        .card h2 { margin: 0; font-size: 1.4rem; color: var(--accent-blue); }
+        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; }
         
-        /* Tooltip (Fixed downwards) */
+        /* Fixed Tooltip */
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
-            border-radius: 50%; background: var(--pass-color); color: #fff;
+            border-radius: 50%; background: var(--accent-blue); color: #fff;
             font-size: 12px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
             position: absolute; top: 130%; left: 50%; transform: translateX(-50%) translateY(-10px);
-            background: var(--text-main); color: var(--bg-color); padding: 12px 18px;
+            background: var(--accent-blue); color: #fff; padding: 12px 18px;
             border-radius: 12px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 9999; text-align: center;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4); font-weight: normal; pointer-events: none;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5); font-weight: 500; pointer-events: none;
         }
         .tooltip::before {
             content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-            border-width: 8px; border-style: solid; border-color: transparent transparent var(--text-main) transparent;
+            border-width: 8px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent;
         }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
-        /* Heartbeat SVG Animation */
+        /* Status & Heartbeats */
         .status-badge { 
             display: inline-flex; align-items: center; gap: 12px; font-weight: 700; 
             font-size: 1.1rem; padding: 8px 16px; border-radius: 12px; 
@@ -114,56 +129,53 @@
         .heartbeat-icon { width: 50px; height: 25px; overflow: visible; }
         .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
 
-        .status-passed { color: var(--pass-color); border-color: rgba(14, 165, 233, 0.2); }
-        .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; }
+        .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.2); text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);}
+        .status-passed .hb-path { stroke: var(--pass-color); animation: heartbeat 2s linear infinite; filter: drop-shadow(0 0 4px var(--pass-color)); }
 
-        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.2); }
-        .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; }
+        .status-failed { color: var(--fail-color); border-color: rgba(239, 68, 68, 0.2); text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);}
+        .status-failed .hb-path { stroke: var(--fail-color); animation: heartbeat 0.7s linear infinite; filter: drop-shadow(0 0 4px var(--fail-color)); }
 
-        .status-inactive { color: var(--inactive-color); border-color: rgba(148, 163, 184, 0.2); }
+        .status-inactive { color: var(--inactive-color); }
         .status-inactive .hb-path { stroke: var(--inactive-color); stroke-dasharray: 0; stroke-dashoffset: 0; }
 
         @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
 
         .meta { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8; }
-        
         .screenshot-container { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); }
         .screenshot { width: 100%; display: block; cursor: pointer; }
-        .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(14, 165, 233, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); }
+        .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 12px; margin-top: 20px; border: 1px dashed var(--pass-color); }
 
-        /* 3D Chart Section */
-        .chart-section { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); height: 100%; min-height: 600px;}
-        .chart-container { width: 100%; height: 85%; margin-top: 20px; border-radius: 12px; }
+        /* Chart Area */
+        .chart-section { display: flex; flex-direction: column; }
+        .chart-container { width: 100%; flex-grow: 1; min-height: 400px; margin-top: 10px; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); padding: 10px;}
 
-        /* Bottom Left Global Status */
+        /* Global Status Floating Widget */
         .global-status {
-            position: fixed; bottom: 25px; left: 25px; background: var(--card-bg);
-            backdrop-filter: blur(10px); border: 1px solid var(--card-border);
+            position: fixed; bottom: 20px; left: 20px; background: var(--card-bg);
+            backdrop-filter: blur(15px); border: 1px solid var(--card-border);
             padding: 12px 25px; border-radius: 30px; box-shadow: var(--shadow);
             display: flex; align-items: center; gap: 15px; font-weight: 600; font-size: 0.95rem; z-index: 100;
         }
-        .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s; }
+        .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); }
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
     </style>
 </head>
 <body>
 
-    <!-- 3D Background Canvas -->
     <canvas id="bg-canvas"></canvas>
 
     <header>
-        <div class="logo-container">
+        <a href="https://clinic.peoplesdoctor.ai" target="_blank" class="logo-container">
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
-        </div>
+        </a>
         <h1>Peoples Clinic Status Monitoring</h1>
         <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">Toggle Theme</button>
     </header>
 
     <div class="dashboard-layout">
-        <!-- Left Column: Test Cards -->
+        <!-- Cards Column -->
         <div class="cards-column">
-            <!-- Smoke Test Card -->
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
                     <h2>💨 10-Min Smoke Test</h2>
@@ -184,7 +196,6 @@
                 <div id="smoke-screenshots"></div>
             </div>
 
-            <!-- Regression Test Card -->
             <div class="card" id="regression-card">
                 <div class="title-wrapper">
                     <h2>🔍 Regression Monitoring</h2>
@@ -206,36 +217,34 @@
             </div>
         </div>
 
-        <!-- Right Column: 3D History Graph -->
+        <!-- 3D Graph Column -->
         <div class="chart-section">
             <div class="title-wrapper">
                 <h2>📊 Live Global Stability Matrix</h2>
                 <div class="info-icon">i
-                    <span class="tooltip">Synchronized globally. Plots the precise Pass/Fail status of tests over the last 24 hours in an interactive 3D topological space. Drag to rotate!</span>
+                    <span class="tooltip">Synchronized globally. Plots the precise Pass/Fail status of individual tests over the last 24 hours. Drag to rotate!</span>
                 </div>
             </div>
             <div class="chart-container" id="historyChart"></div>
         </div>
     </div>
 
-    <!-- Floating Global Status -->
     <div class="global-status" id="global-status">
         <div class="status-led" id="global-led"></div>
         <span id="global-text">System Status: Analyzing...</span>
     </div>
 
     <script>
-        // --- 1. Smart Theme Management ---
+        // --- 1. Smart Time-Based Theme ---
         const themeBtn = document.getElementById('theme-btn');
+        let userToggled = false; 
         
         function setSmartTheme() {
-            let savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                applyTheme(savedTheme);
-            } else {
-                const hour = new Date().getHours();
-                applyTheme((hour >= 6 && hour < 18) ? 'light' : 'dark');
-            }
+            if(userToggled) return; // Respect manual clicks in session
+            const hour = new Date().getHours();
+            // True Dark mode from 18:00 (6 PM) to 05:59 (5 AM)
+            const isDaytime = hour >= 6 && hour < 18;
+            applyTheme(isDaytime ? 'light' : 'dark');
         }
 
         function applyTheme(theme) {
@@ -246,16 +255,15 @@
         }
 
         function toggleThemeManual() {
+            userToggled = true;
             const current = document.documentElement.getAttribute('data-theme');
-            const newTheme = current === 'light' ? 'dark' : 'light';
-            localStorage.setItem('theme', newTheme);
-            applyTheme(newTheme);
+            applyTheme(current === 'light' ? 'dark' : 'light');
         }
-        setSmartTheme();
+        setSmartTheme(); // Run immediately
 
-        // --- 2. Global State & UI Updaters ---
+        // --- 2. Live UI Updaters ---
         let globalState = { smoke: 'inactive', regression: 'inactive' };
-        let historyData = { times: [], smoke: [], regression: [] };
+        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} }; // Split Data Arrays!
 
         function updateGlobalStatus() {
             const txt = document.getElementById('global-text');
@@ -276,7 +284,6 @@
             }
         }
 
-        // --- 3. Bulletproof Live Data Loader ---
         async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
             const textEl = document.getElementById(`${cardPrefix}-status-text`);
             const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
@@ -284,14 +291,10 @@
             const pathEl = document.getElementById(`${cardPrefix === 'smoke' ? 'smoke-hb' : 'reg-hb'}`);
             
             try {
-                // Ensure we fetch from the correct relative path
                 const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP Error: ${response.status}`);
-                }
-                
+                if (!response.ok) throw new Error("File not found");
                 const data = await response.json();
+
                 const now = new Date();
                 const testTime = new Date(data.timestamp);
                 const diffMinutes = (now - testTime) / (1000 * 60);
@@ -316,18 +319,15 @@
                         textEl.innerText = 'FAILING';
                         pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15');
                         if (data.screenshots && data.screenshots.length > 0) {
-                            const lastImage = data.screenshots[data.screenshots.length - 1];
-                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Frame:</p><div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure"></a></div>`;
+                            const lastImg = data.screenshots[data.screenshots.length - 1];
+                            imgContainer.innerHTML = `<p style="color:var(--fail-color); font-weight:bold; margin-bottom:5px;">📸 Failure Frame:</p><div class="screenshot-container"><a href="${lastImg}" target="_blank"><img src="${lastImg}" class="screenshot" alt="Failure"></a></div>`;
                         }
                     }
                 }
             } catch (e) {
-                // Safely catch errors so the rest of the site doesn't break
-                console.error(`Error loading ${testName}:`, e);
                 badgeEl.className = 'status-badge status-inactive';
                 textEl.innerText = 'DATA ERROR';
-                pathEl.setAttribute('d', 'M0 15 L100 15');
-                imgContainer.innerHTML = `<div class="no-failures" style="color:var(--fail-color); border-color:var(--fail-color)">Could not read test data. (${e.message})</div>`;
+                imgContainer.innerHTML = `<div class="no-failures" style="color:var(--fail-color); border-color:var(--fail-color)">Could not read test data.</div>`;
             }
             updateGlobalStatus();
         }
@@ -335,161 +335,151 @@
         loadLiveData('smoke', 'smoke', 30);
         loadLiveData('regression', 'regression', 120);
 
-        // --- 4. Safe GitHub History Sync ---
+        // --- 3. Split-Data GitHub Sync ---
         async function fetchGlobalHistory() {
             try {
                 const hostname = window.location.hostname;
-                if (!hostname.includes('github.io')) throw new Error("Localhost detected");
+                if (!hostname.includes('github.io')) throw new Error("Local");
                 
                 const owner = hostname.split('.')[0];
-                // Safely extract repo name even if URL has trailing slashes or index.html
                 const pathSegments = window.location.pathname.split('/').filter(Boolean);
                 const repo = pathSegments.length > 0 ? pathSegments[0] : '';
                 
-                const regRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=10&status=completed`);
-                const smokeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=10&status=completed`);
+                const [regRes, smokeRes] = await Promise.all([
+                    fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=15&status=completed`),
+                    fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=15&status=completed`)
+                ]);
                 
-                if (!regRes.ok || !smokeRes.ok) throw new Error("GitHub API Rate Limited");
+                if (!regRes.ok || !smokeRes.ok) throw new Error("API Limit");
 
                 const regData = await regRes.json();
                 const smokeData = await smokeRes.json();
 
-                let timesMap = {};
+                // Process Smoke completely independently
                 if(smokeData.workflow_runs) {
                     smokeData.workflow_runs.reverse().forEach(run => {
-                        let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
-                        timesMap[t].smoke = run.conclusion === 'success' ? 1 : 0;
+                        githubHistory.smoke.x.push(new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0);
                     });
                 }
+                // Process Regression completely independently
                 if(regData.workflow_runs) {
                     regData.workflow_runs.reverse().forEach(run => {
-                        let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
-                        timesMap[t].reg = run.conclusion === 'success' ? 1 : 0;
+                        githubHistory.reg.x.push(new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0);
                     });
                 }
-
-                historyData.times = Object.keys(timesMap);
-                historyData.smoke = historyData.times.map(t => timesMap[t].smoke !== null ? timesMap[t].smoke : 1);
-                historyData.regression = historyData.times.map(t => timesMap[t].reg !== null ? timesMap[t].reg : 1);
-                
                 render3DChart();
             } catch(e) {
-                console.warn("GitHub API Sync failed (using simulated fallback):", e);
-                // Graceful fallback so the graph isn't empty
-                historyData = {
-                    times: ['-4h', '-3h', '-2h', '-1h', 'Now'],
-                    smoke: [1, 1, 1, 1, globalState.smoke === 'failure' ? 0 : 1],
-                    regression: [1, 1, 0, 1, globalState.regression === 'failure' ? 0 : 1]
-                };
+                console.warn("API fallback used.");
+                // Fallback creates distinct arrays
+                githubHistory.smoke = { x: ['1:00','1:10','1:20','1:30'], z: [1,1,1,globalState.smoke === 'failure'?0:1] };
+                githubHistory.reg = { x: ['1:00','2:00'], z: [1, globalState.regression === 'failure'?0:1] };
                 render3DChart();
             }
         }
         setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 5. Safe Plotly 3D Graph ---
+        // --- 4. Sleek Colored Plotly Graph ---
         window.render3DChart = function() {
-            if (typeof Plotly === 'undefined') {
-                console.warn("Plotly library blocked by browser.");
-                document.getElementById('historyChart').innerHTML = "<p style='text-align:center; margin-top:50px; color:var(--text-muted)'>Graph library blocked by network/adblocker.</p>";
-                return;
-            }
-            if (historyData.times.length === 0) return;
+            if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            let fontColor = isDark ? '#f8fafc' : '#0f172a';
-            let gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            let fontColor = isDark ? '#e2e8f0' : '#0f172a';
+            let gridColor = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)'; // Glowing blue grids
+            let passColor = '#10b981'; // Neon Green
+            let failColor = '#ef4444'; // Neon Red
 
             let hoverTemplate = "<b>%{text}</b><br>Time: %{x}<extra></extra>";
 
+            // Smoke Trace (Y=0)
             var traceSmoke = {
-                x: historyData.times, y: new Array(historyData.times.length).fill(0), z: historyData.smoke,
+                x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
                 mode: 'lines+markers', name: 'Smoke Test',
-                line: { width: 10, color: '#0ea5e9' }, marker: { size: 6, color: '#0ea5e9' },
-                text: historyData.smoke.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), hovertemplate: hoverTemplate, type: 'scatter3d'
+                line: { width: 8, color: '#38bdf8' }, 
+                marker: { size: 8, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: '#fff'} },
+                text: githubHistory.smoke.z.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), 
+                hovertemplate: hoverTemplate, type: 'scatter3d'
             };
 
+            // Regression Trace (Y=1)
             var traceReg = {
-                x: historyData.times, y: new Array(historyData.times.length).fill(1), z: historyData.regression,
+                x: githubHistory.reg.x, y: new Array(githubHistory.reg.x.length).fill(1), z: githubHistory.reg.z,
                 mode: 'lines+markers', name: 'Regression Test',
-                line: { width: 10, color: '#3b82f6' }, marker: { size: 6, color: '#3b82f6' },
-                text: historyData.regression.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), hovertemplate: hoverTemplate, type: 'scatter3d'
+                line: { width: 8, color: '#818cf8' }, 
+                marker: { size: 10, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: '#fff'} },
+                text: githubHistory.reg.z.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), 
+                hovertemplate: hoverTemplate, type: 'scatter3d'
             };
 
             var layout = {
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', 
+                margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    xaxis: { title: 'Timeline', color: fontColor, gridcolor: gridColor },
-                    yaxis: { title: '', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'] },
-                    zaxis: { title: 'Result', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2] },
-                    camera: { eye: {x: -1.5, y: -1.5, z: 0.5} }
+                    xaxis: { title: { text: 'Time', font: { color: fontColor, size: 14 } }, color: fontColor, gridcolor: gridColor, showbackground: false },
+                    yaxis: { title: '', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
+                    zaxis: { 
+                        title: { text: 'Result', font: { color: fontColor, size: 14 } }, color: fontColor, gridcolor: gridColor, 
+                        tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.5)' : 'rgba(255,255,255,0.3)'
+                    },
+                    camera: { eye: {x: -1.6, y: -1.6, z: 0.4} }
                 },
-                legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }
+                legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' },
+                autosize: true
             };
 
             Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
         };
 
-        // --- 6. Safe Three.js 3D Background ---
+        // Window Resize Event for Plotly
+        window.addEventListener('resize', () => { if(typeof Plotly !== 'undefined') Plotly.Plots.resize('historyChart'); });
+
+        // --- 5. Three.js Ocean Background ---
         let scene, camera, renderer, planeMesh;
         function init3DBackground() {
-            if (typeof THREE === 'undefined') {
-                console.warn("Three.js blocked by browser.");
-                return;
-            }
-            try {
-                const canvas = document.getElementById('bg-canvas');
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            if (typeof THREE === 'undefined') return;
+            const canvas = document.getElementById('bg-canvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const geometry = new THREE.PlaneGeometry(200, 100, 40, 20);
+            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 });
+
+            planeMesh = new THREE.Mesh(geometry, material);
+            planeMesh.rotation.x = -Math.PI / 2.5; 
+            planeMesh.position.y = -20;
+            planeMesh.position.z = -40;
+            scene.add(planeMesh);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
-                const material = new THREE.MeshBasicMaterial({ 
-                    color: 0x0ea5e9, wireframe: true, transparent: true, 
-                    opacity: document.documentElement.getAttribute('data-theme') === 'dark' ? 0.15 : 0.2 
-                });
-
-                planeMesh = new THREE.Mesh(geometry, material);
-                planeMesh.rotation.x = -Math.PI / 2.5; 
-                planeMesh.position.y = -20;
-                planeMesh.position.z = -40;
-                scene.add(planeMesh);
-
-                window.addEventListener('resize', () => {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                });
-                animate3D();
-            } catch (e) { console.warn("3D BG failed to initialize:", e); }
+            });
+            animate3D();
         }
 
         window.update3DBackgroundTheme = function(theme) {
-            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.2;
+            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.1 : 0.2;
         };
 
         function animate3D() {
             requestAnimationFrame(animate3D);
             if(!planeMesh) return;
-            const time = Date.now() * 0.001;
+            const time = Date.now() * 0.0008;
             const position = planeMesh.geometry.attributes.position;
             for (let i = 0; i < position.count; i++) {
                 const x = position.getX(i);
                 const y = position.getY(i);
-                const z = Math.sin(x * 0.1 + time) * 3 + Math.cos(y * 0.1 + time) * 3;
-                position.setZ(i, z);
+                position.setZ(i, Math.sin(x * 0.1 + time) * 4 + Math.cos(y * 0.1 + time) * 4);
             }
             position.needsUpdate = true;
-            planeMesh.rotation.z = Math.sin(time * 0.1) * 0.1;
+            planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05;
             renderer.render(scene, camera);
         }
-
-        // Initialize 3D Background safely
         init3DBackground();
     </script>
-</body>
-</html>
 </body>
 </html>
