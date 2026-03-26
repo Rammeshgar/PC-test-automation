@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peoples Clinic Status Monitoring</title>
     
+    <!-- Added ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -26,6 +28,11 @@
             --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); 
             --title-gradient: linear-gradient(90deg, #0284c7, #2563eb);
             --graph-bg: rgba(255, 255, 255, 0.1); 
+            
+            /* Tooltip Specific Variables */
+            --tt-bg: rgba(255, 255, 255, 0.9);
+            --tt-text: #0f172a;
+            --tt-border: rgba(14, 165, 233, 0.2);
         }
 
         [data-theme="dark"] {
@@ -37,6 +44,10 @@
             --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
             --title-gradient: linear-gradient(90deg, #38bdf8, #818cf8);
             --graph-bg: rgba(10, 15, 30, 0.4);
+            
+            --tt-bg: rgba(15, 23, 42, 0.9);
+            --tt-text: #f8fafc;
+            --tt-border: rgba(14, 165, 233, 0.3);
         }
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
@@ -75,20 +86,18 @@
         }
 
         .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20; }
-        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative;}
+        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative; overflow: hidden;}
 
         .card, .chart-section {
             background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); position: relative;
         }
 
-        /* Enhanced Title Wrapper for Toggles */
         .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .title-left { display: flex; align-items: center; gap: 10px; }
         .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); font-weight: 700;}
         .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; font-weight: 700;}
         
-        /* New Chart View Toggles */
         .chart-toggles { 
             display: flex; gap: 5px; background: rgba(0,0,0,0.05); padding: 5px; 
             border-radius: 25px; border: 1px solid var(--card-border);
@@ -101,10 +110,7 @@
             font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .chart-btn:hover { color: var(--text-main); }
-        .chart-btn.active { 
-            background: var(--accent-blue); color: #fff; 
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); 
-        }
+        .chart-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); }
 
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
@@ -215,15 +221,15 @@
                 <div class="title-left">
                     <h2>📊 Live Global Stability Matrix</h2>
                     <div class="info-icon">i
-                        <span class="tooltip" id="chart-tooltip">2D Timeline. Tracks test stability over time using glowing digital state lines.</span>
+                        <span class="tooltip" id="chart-tooltip">ECharts 2D Timeline. Tracks test stability over time using glowing digital state lines. Highly responsive.</span>
                     </div>
                 </div>
-                <!-- Interactive Toggle Buttons -->
                 <div class="chart-toggles">
-                    <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')">Neon 2D (Default)</button>
-                    <button class="chart-btn" id="btn-3d" onclick="setChartMode('3d')">3D Matrix</button>
+                    <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')">Neon 2D (ECharts)</button>
+                    <button class="chart-btn" id="btn-3d" onclick="setChartMode('3d')">3D Matrix (Plotly)</button>
                 </div>
             </div>
+            <!-- The Container used by both engines -->
             <div class="chart-container" id="historyChart"></div>
         </div>
     </div>
@@ -234,8 +240,9 @@
     </div>
 
     <script>
-        // --- Global State ---
-        let currentChartMode = '2d'; // Default view
+        // --- Global State & Engine Variables ---
+        let currentChartMode = '2d'; 
+        let eChartInstance = null; // Holds the ECharts object
         let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} };
         let globalState = { smoke: 'inactive', regression: 'inactive' };
 
@@ -253,7 +260,7 @@
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            if (window.renderChart) window.renderChart(); // Re-render active chart
+            if (window.renderChart) window.renderChart(); 
             if (window.update3DBackgroundTheme) window.update3DBackgroundTheme(theme);
         }
 
@@ -281,7 +288,6 @@
         }
 
         async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
-            // Unchanged from your original code
             const textEl = document.getElementById(`${cardPrefix}-status-text`);
             const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
             const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
@@ -346,7 +352,7 @@
                 if(smokeData.workflow_runs) {
                     smokeData.workflow_runs.reverse().forEach(run => {
                         githubHistory.smoke.x.push(new Date(run.updated_at));
-                        githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); // Using z for status to match original logic
+                        githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); 
                     });
                 }
                 if(regData.workflow_runs) {
@@ -359,9 +365,9 @@
             } catch(e) {
                 console.warn("API fallback used.");
                 let now = new Date();
-                // Faked mock data with a failure mixed in to show off the red UI
-                githubHistory.smoke = { x: [new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1,1,0,1] };
-                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), new Date(now.getTime() - 30*60000), now], z: [1, 1, 1] };
+                // Faked mock data with failures to show off the red UI and ECharts step connections
+                githubHistory.smoke = { x: [new Date(now.getTime() - 50*60000), new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1, 1, 0, 0, 1] };
+                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), new Date(now.getTime() - 30*60000), now], z: [1, 0, 1] };
                 window.renderChart();
             }
         }
@@ -373,89 +379,143 @@
             document.getElementById('btn-2d').className = mode === '2d' ? 'chart-btn active' : 'chart-btn';
             document.getElementById('btn-3d').className = mode === '3d' ? 'chart-btn active' : 'chart-btn';
             
-            // Update tooltip context
             document.getElementById('chart-tooltip').innerText = mode === '2d' ? 
-                "2D Timeline. Tracks test stability over time using glowing digital state lines. No overlaps." : 
+                "ECharts 2D Timeline. Tracks test stability over time using glowing digital state lines. Highly responsive." : 
                 "True Timeline. Plots precise Pass/Fail statuses independently. Drag the chart to rotate it in 3D space!";
                 
             window.renderChart();
         }
 
         window.renderChart = function() {
-            if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
-            // Purge existing chart to prevent layout conflicts when switching modes entirely
-            Plotly.purge('historyChart'); 
-            
+            if (githubHistory.smoke.x.length === 0) return;
+            const container = document.getElementById('historyChart');
+
+            // --- Cleanup Logic (Crucial for switching engines) ---
+            if (typeof Plotly !== 'undefined') Plotly.purge(container); // Always purge Plotly
+            if (eChartInstance) { eChartInstance.dispose(); eChartInstance = null; } // Always dispose ECharts
+            container.innerHTML = ''; // Ensure canvas is empty
+
             if (currentChartMode === '2d') {
-                renderNeon2D();
+                renderNeon2DECharts(container);
             } else {
-                renderMatrix3D();
+                renderMatrix3DPlotly(container);
             }
         };
 
         // ==========================================
-        // NEW DEFAULT: The 2D Neon Timeline
+        // NEW DEFAULT: The 2D ECharts Implementation
         // ==========================================
-        function renderNeon2D() {
+        function renderNeon2DECharts(container) {
+            if (typeof echarts === 'undefined') return;
+            eChartInstance = echarts.init(container);
+
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            let timeColor = '#f59e0b'; 
-            let fontColor = isDark ? '#cbd5e1' : '#334155'; 
-            let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.15)';
-            let passColor = '#10b981'; 
-            let failColor = '#ef4444'; 
-            
-            // "hv" creates horizontal-then-vertical steps. Perfect for digital pass/fail signals.
-            var traceReg2D = {
-                x: githubHistory.reg.x, y: githubHistory.reg.z,
-                mode: 'lines+markers', name: 'Regression Test',
-                line: { shape: 'hv', width: 3, color: '#8b5cf6' },
-                fill: 'tozeroy', fillcolor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
-                marker: { size: 10, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: isDark ? '#020617' : '#fff'} },
-                text: githubHistory.reg.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
-                hovertemplate: "<b>%{text}</b><br>Regression<br>Time: %{x|%I:%M %p}<extra></extra>", 
-                xaxis: 'x', yaxis: 'y2', type: 'scatter'
-            };
+            let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.2)';
+            let fontColor = isDark ? '#94a3b8' : '#334155';
+            let crosshairColor = isDark ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.6)';
 
-            var traceSmoke2D = {
-                x: githubHistory.smoke.x, y: githubHistory.smoke.z,
-                mode: 'lines+markers', name: 'Smoke Monitoring',
-                line: { shape: 'hv', width: 3, color: '#0ea5e9' },
-                fill: 'tozeroy', fillcolor: isDark ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)',
-                marker: { size: 10, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: isDark ? '#020617' : '#fff'} },
-                text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
-                hovertemplate: "<b>%{text}</b><br>Smoke<br>Time: %{x|%I:%M %p}<extra></extra>", 
-                xaxis: 'x', yaxis: 'y1', type: 'scatter'
-            };
+            // Formatting data for ECharts: [[timestamp, value], ...]
+            let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i]]);
+            let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i]]);
 
-            var layout2D = {
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-                margin: { l: 70, r: 30, b: 50, t: 30 },
-                showlegend: false, hovermode: 'x unified',
-                grid: { rows: 2, columns: 1, pattern: 'independent' },
-                xaxis: { 
-                    title: 'Timeline', type: 'date', tickformat: '%I:%M %p', 
-                    tickfont: { color: timeColor, size: 12 }, gridcolor: gridColor, zeroline: false 
+            let option = {
+                // Completely Custom HTML Tooltip (No greyed out text, adapts to theme)
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)',
+                    borderWidth: 1, padding: [12, 16], borderRadius: 8,
+                    textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' },
+                    extraCssText: 'box-shadow: 0 10px 25px rgba(0,0,0,0.2); backdrop-filter: blur(10px);',
+                    axisPointer: { type: 'line', lineStyle: { color: crosshairColor, width: 2, type: 'dashed' } }, // Soft dashed line, not awkward white
+                    formatter: function(params) {
+                        let time = new Date(params[0].value[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        let html = `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div>`; // Bright orange time
+                        
+                        params.forEach(p => {
+                            let status = p.value[1] === 1 ? 'PASS' : 'FAIL';
+                            let sColor = p.value[1] === 1 ? '#10b981' : '#ef4444';
+                            html += `
+                                <div style="display:flex; justify-content: space-between; align-items:center; gap:15px; margin-top:5px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor}; box-shadow: 0 0 8px ${sColor}"></span>
+                                        <span style="font-weight:600; color:${p.color}">${p.seriesName}</span>
+                                    </div>
+                                    <span style="font-weight:700; color:${sColor}; letter-spacing: 0.5px;">${status}</span>
+                                </div>
+                            `;
+                        });
+                        return html;
+                    }
                 },
-                // Y-Axis for Smoke (Bottom half)
-                yaxis: { 
-                    domain: [0, 0.45], tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], 
-                    tickfont: { color: fontColor, size: 11, weight: 'bold' }, title: { text: 'Smoke', font: {color: '#0ea5e9', size: 14}},
-                    gridcolor: gridColor, range: [-0.15, 1.2], zeroline: false
-                },
-                // Y-Axis for Regression (Top half)
-                yaxis2: { 
-                    domain: [0.55, 1], tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], 
-                    tickfont: { color: fontColor, size: 11, weight: 'bold' }, title: { text: 'Regression', font: {color: '#8b5cf6', size: 14}},
-                    gridcolor: gridColor, range: [-0.15, 1.2], zeroline: false
-                }
+                // Two separate grids to stack the lines without overlap
+                grid: [
+                    { top: '10%', height: '35%', left: '80px', right: '30px' },
+                    { top: '55%', height: '35%', left: '80px', right: '30px' }
+                ],
+                xAxis: [
+                    { type: 'time', gridIndex: 0, show: false }, // Hide top x-axis
+                    { 
+                        type: 'time', gridIndex: 1, 
+                        splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } },
+                        axisLabel: { 
+                            formatter: '{hh}:{mm} {a}', 
+                            color: '#f59e0b', // Vibrant Orange forced for visibility
+                            fontWeight: '600',
+                            padding: [10, 0, 0, 0]
+                        },
+                        axisLine: { lineStyle: { color: gridColor } }
+                    }
+                ],
+                yAxis: [
+                    { 
+                        type: 'value', gridIndex: 0, min: -0.2, max: 1.2, splitNumber: 1,
+                        axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' },
+                        splitLine: { lineStyle: { color: gridColor } },
+                        name: 'Regression', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#8b5cf6', fontSize: 13, fontWeight: 'bold' }
+                    },
+                    { 
+                        type: 'value', gridIndex: 1, min: -0.2, max: 1.2, splitNumber: 1,
+                        axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' },
+                        splitLine: { lineStyle: { color: gridColor } },
+                        name: 'Smoke', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#0ea5e9', fontSize: 13, fontWeight: 'bold' }
+                    }
+                ],
+                series: [
+                    {
+                        name: 'Regression Test', type: 'line', xAxisIndex: 0, yAxisIndex: 0,
+                        data: regData, step: 'end', symbol: 'circle', symbolSize: 8,
+                        itemStyle: { color: '#8b5cf6', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 },
+                        lineStyle: { width: 3, shadowColor: 'rgba(139, 92, 246, 0.5)', shadowBlur: 10 }, // Neon Glow
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(139, 92, 246, 0.3)' },
+                                { offset: 1, color: 'rgba(139, 92, 246, 0.0)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'Smoke Monitoring', type: 'line', xAxisIndex: 1, yAxisIndex: 1,
+                        data: smokeData, step: 'end', symbol: 'circle', symbolSize: 8,
+                        itemStyle: { color: '#0ea5e9', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 },
+                        lineStyle: { width: 3, shadowColor: 'rgba(14, 165, 233, 0.5)', shadowBlur: 10 }, // Neon Glow
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(14, 165, 233, 0.3)' },
+                                { offset: 1, color: 'rgba(14, 165, 233, 0.0)' }
+                            ])
+                        }
+                    }
+                ]
             };
-            Plotly.newPlot('historyChart', [traceSmoke2D, traceReg2D], layout2D, {responsive: true, displayModeBar: false});
+            eChartInstance.setOption(option);
         }
 
         // ==========================================
-        // LEGACY VIEW: The 3D Matrix
+        // LEGACY VIEW: The 3D Matrix (Plotly)
         // ==========================================
-        function renderMatrix3D() {
+        function renderMatrix3DPlotly(containerId) {
+            if (typeof Plotly === 'undefined') return;
+
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let timeColor = '#f59e0b'; 
             let categoryColor = isDark ? '#94a3b8' : '#475569'; 
@@ -466,7 +526,7 @@
 
             var traceSmoke = {
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
-                mode: 'lines+markers', name: 'Smoke Monitoring',
+                mode: 'lines+markers', name: 'Smoke',
                 line: { width: 5, color: '#0ea5e9' }, 
                 marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor) },
                 text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
@@ -475,7 +535,7 @@
 
             var traceReg = {
                 x: githubHistory.reg.x, y: new Array(githubHistory.reg.x.length).fill(1), z: githubHistory.reg.z,
-                mode: 'lines+markers', name: 'Regression Test',
+                mode: 'lines+markers', name: 'Regression',
                 line: { width: 5, color: '#8b5cf6' }, 
                 marker: { size: 8, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor) },
                 text: githubHistory.reg.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
@@ -486,7 +546,7 @@
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
                     xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: timeColor, size: 12 }, gridcolor: gridColor, showbackground: false, zeroline: false },
-                    yaxis: { title: '', tickfont: { color: categoryColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false, zeroline: false, range: [-0.1, 1.1] },
+                    yaxis: { title: '', tickfont: { color: categoryColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Reg'], showbackground: false, zeroline: false, range: [-0.1, 1.1] },
                     zaxis: { title: '', tickfont: { color: statusColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: false, zeroline: false },
                     camera: { eye: {x: -1.2, y: -1.6, z: 0.5} }
                 },
@@ -495,7 +555,14 @@
             Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout3D, {responsive: true, displayModeBar: false});
         }
 
-        window.addEventListener('resize', () => { if(typeof Plotly !== 'undefined') Plotly.Plots.resize('historyChart'); });
+        // Handle Resizing for both engines
+        window.addEventListener('resize', () => { 
+            if(currentChartMode === '2d' && eChartInstance) {
+                eChartInstance.resize();
+            } else if (currentChartMode === '3d' && typeof Plotly !== 'undefined') {
+                Plotly.Plots.resize('historyChart'); 
+            }
+        });
 
         // --- Three.js Background Background ---
         let scene, camera, renderer, planeMesh;
