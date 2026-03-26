@@ -16,12 +16,10 @@
             --card-bg: rgba(255, 255, 255, 0.7);
             --card-border: rgba(14, 165, 233, 0.4);
             
-            /* Core Colors */
             --pass-color: #10b981; /* Neon Green */
             --fail-color: #ef4444; /* Alert Red */
             --inactive-color: #94a3b8;
             --accent-blue: #0ea5e9;
-            --accent-purple: #8b5cf6;
             
             --shadow: 0 15px 35px rgba(14, 165, 233, 0.15);
             --title-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
@@ -41,60 +39,56 @@
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
-        /* Fit-to-Screen Architecture */
+        /* Strict Fit-to-Screen Architecture */
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            height: 100vh; /* Exactly 1 screen height */
-            overflow: hidden; /* No scrolling allowed */
+            height: 100vh; width: 100vw;
+            overflow: hidden; /* Absolutely no scrolling on desktop */
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
 
         #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.6; pointer-events: none; }
 
-        /* Header with Integrated Status */
+        /* Header */
         header {
             flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 15px;
-            padding: 15px 25px; background: var(--card-bg);
+            padding: 15px 30px; background: var(--card-bg);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border); z-index: 50; box-shadow: var(--shadow);
         }
         .logo-container img { height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
+        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
 
         /* Header Status Light */
-        .header-status { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 8px 15px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;}
+        .header-status { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.95rem; border: 1px solid var(--card-border);}
         [data-theme="dark"] .header-status { background: rgba(255,255,255,0.05); }
         .status-led { width: 12px; height: 12px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
         .led-pass { background: var(--pass-color); box-shadow: 0 0 10px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 10px var(--fail-color); }
 
-        .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+        .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
         .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
         /* Main Dashboard Grid */
         .dashboard-layout {
-            flex: 1 1 auto; display: flex; gap: 20px; padding: 20px;
-            overflow: hidden; /* Lock grid */
-            max-width: 1800px; margin: 0 auto; width: 100%;
+            flex: 1 1 0; display: flex; gap: 25px; padding: 25px;
+            max-width: 1800px; margin: 0 auto; width: 100%; height: 100%;
         }
 
         .cards-column {
-            flex: 0 0 380px; display: flex; flex-direction: column; gap: 20px;
-            overflow-y: auto; /* Only scroll cards if they overflow vertically */
-            padding-right: 10px;
+            flex: 0 0 400px; display: flex; flex-direction: column; gap: 25px;
+            height: 100%; overflow-y: auto; padding-right: 10px;
         }
-        /* Hide scrollbar for clean look */
         .cards-column::-webkit-scrollbar { width: 6px; }
         .cards-column::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
 
         .chart-section {
-            flex: 1 1 auto; display: flex; flex-direction: column;
-            overflow: hidden; height: 100%;
+            flex: 1 1 0; display: flex; flex-direction: column; height: 100%;
         }
-        .chart-container { flex: 1 1 auto; min-height: 0; width: 100%; position: relative; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 10px;}
+        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px;}
 
         /* Glass Cards */
         .card, .chart-section {
@@ -104,24 +98,24 @@
         }
 
         .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .card h2 { margin: 0; font-size: 1.3rem; color: var(--accent-blue); }
-        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.4rem; }
+        .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); }
+        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; }
         
-        /* Tooltip Fixed */
+        /* Fixed Tooltip */
         .info-icon {
-            display: flex; justify-content: center; align-items: center; width: 20px; height: 20px;
-            border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 12px; cursor: help; position: relative; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
+            border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
             position: absolute; top: 130%; left: 50%; transform: translateX(-50%) translateY(-10px);
-            background: var(--accent-blue); color: #fff; padding: 12px; border-radius: 10px; font-size: 0.85rem; width: 260px; opacity: 0; visibility: hidden;
+            background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 260px; opacity: 0; visibility: hidden;
             transition: all 0.3s; z-index: 9999; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); pointer-events: none;
         }
         .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
         /* Status & Heartbeats */
-        .status-badge { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; padding: 6px 14px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
+        .status-badge { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; padding: 8px 16px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
         [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.03); }
 
         .heartbeat-icon { width: 45px; height: 22px; overflow: visible; }
@@ -138,18 +132,21 @@
 
         @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
 
-        .meta { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+        .meta { margin-top: 15px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
         .screenshot-container { margin-top: 15px; border-radius: 10px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); }
         .screenshot { width: 100%; display: block; cursor: pointer; }
-        .no-failures { padding: 12px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: 15px; border: 1px dashed var(--pass-color); }
+        .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: 15px; border: 1px dashed var(--pass-color); }
 
-        /* Mobile Responsiveness */
+        /* Mobile Adjustments */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; }
             .dashboard-layout { flex-direction: column; overflow: visible; height: auto; }
-            .cards-column { flex: 0 0 auto; padding-right: 0; }
+            .cards-column { flex: 0 0 auto; width: 100%; padding-right: 0; }
             .chart-section { min-height: 500px; flex: 0 0 auto; }
-            .header-status { display: none; } /* Hide in header on mobile to save space */
+        }
+        @media (max-width: 600px) {
+            header { flex-direction: column; text-align: center; }
+            .header-status { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -172,6 +169,7 @@
     </header>
 
     <div class="dashboard-layout">
+        <!-- Cards Column -->
         <div class="cards-column">
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
@@ -214,11 +212,12 @@
             </div>
         </div>
 
+        <!-- Chart Column -->
         <div class="chart-section">
             <div class="title-wrapper">
                 <h2>📊 Live Global Stability Matrix</h2>
                 <div class="info-icon">i
-                    <span class="tooltip">True Timeline. Plots precise Pass/Fail statuses independently. Colors: Green (Pass), Red (Fail).</span>
+                    <span class="tooltip">True Timeline. Plots precise Pass/Fail statuses independently. Drag the chart to rotate it in 3D space!</span>
                 </div>
             </div>
             <div class="chart-container" id="historyChart"></div>
@@ -233,7 +232,7 @@
         function enforceClockTheme() {
             if(manualOverride) return;
             const hour = new Date().getHours();
-            // Dark mode from 18:00 (6 PM) to 05:59 (5 AM)
+            // Dark mode strictly from 18:00 to 05:59
             const isDaytime = hour >= 6 && hour < 18;
             applyTheme(isDaytime ? 'light' : 'dark');
         }
@@ -250,7 +249,7 @@
             const current = document.documentElement.getAttribute('data-theme');
             applyTheme(current === 'light' ? 'dark' : 'light');
         }
-        enforceClockTheme(); // Run on Load
+        enforceClockTheme(); 
 
         // --- 2. Live UI Updaters ---
         let globalState = { smoke: 'inactive', regression: 'inactive' };
@@ -343,7 +342,6 @@
                 const regData = await regRes.json();
                 const smokeData = await smokeRes.json();
 
-                // Store REAL Javascript Date objects for true timeline plotting
                 if(smokeData.workflow_runs) {
                     smokeData.workflow_runs.reverse().forEach(run => {
                         githubHistory.smoke.x.push(new Date(run.updated_at));
@@ -367,7 +365,7 @@
         }
         setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 4. Sleek Colored Plotly Graph ---
+        // --- 4. Plotly 3D Graph (Clean Native Texts) ---
         window.render3DChart = function() {
             if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
 
@@ -376,13 +374,6 @@
             let gridColor = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)';
             let passColor = '#10b981'; // Neon Green
             let failColor = '#ef4444'; // Neon Red
-
-            // Unique HTML Colors for Axes
-            let axisSmokeText = `<b><span style="color:#0ea5e9; font-size:13px;">Smoke</span></b>`;
-            let axisRegText = `<b><span style="color:#8b5cf6; font-size:13px;">Regression</span></b>`;
-            let axisPassText = `<b><span style="color:${passColor}; font-size:13px;">PASS</span></b>`;
-            let axisFailText = `<b><span style="color:${failColor}; font-size:13px;">FAIL</span></b>`;
-            let xTitle = `<b><span style="color:#f59e0b;">Timeline</span></b>`; // Amber
 
             var traceSmoke = {
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
@@ -405,10 +396,10 @@
             var layout = {
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    xaxis: { title: { text: xTitle }, type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 11 }, gridcolor: gridColor, showbackground: false },
-                    yaxis: { title: '', gridcolor: gridColor, tickvals: [0, 1], ticktext: [axisSmokeText, axisRegText], showbackground: false },
-                    zaxis: { title: '', gridcolor: gridColor, tickvals: [0, 1], ticktext: [axisFailText, axisPassText], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.4)' : 'rgba(255,255,255,0.4)' },
-                    camera: { eye: {x: -1.7, y: -1.7, z: 0.4} }
+                    xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 12 }, gridcolor: gridColor, showbackground: false },
+                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
+                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.4)' : 'rgba(255,255,255,0.4)' },
+                    camera: { eye: {x: -1.4, y: -1.9, z: 0.4} } // Adjusted for better readability out of the box
                 },
                 legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
@@ -418,7 +409,7 @@
 
         window.addEventListener('resize', () => { if(typeof Plotly !== 'undefined') Plotly.Plots.resize('historyChart'); });
 
-        // --- 5. Three.js Ocean Background ---
+        // --- 5. Three.js Background ---
         let scene, camera, renderer, planeMesh;
         function init3DBackground() {
             if (typeof THREE === 'undefined') return;
