@@ -20,10 +20,11 @@
             --fail-color: #ef4444; /* Alert Red */
             --inactive-color: #94a3b8;
             --accent-blue: #0ea5e9;
+            --accent-purple: #8b5cf6;
             
             --shadow: 0 15px 35px rgba(14, 165, 233, 0.15);
             --title-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
-            --graph-bg: rgba(255, 255, 255, 0.4);
+            --graph-bg: rgba(255, 255, 255, 0.05); /* Reduced brightness for light theme */
         }
 
         [data-theme="dark"] {
@@ -34,16 +35,15 @@
             
             --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
             --title-gradient: linear-gradient(90deg, #38bdf8, #818cf8);
-            --graph-bg: rgba(10, 15, 30, 0.6);
+            --graph-bg: rgba(10, 15, 30, 0.4);
         }
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
-        /* Strict Fit-to-Screen Architecture */
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
             height: 100vh; width: 100vw;
-            overflow: hidden; /* Absolutely no scrolling on desktop */
+            overflow: hidden; /* Lock scroll on desktop */
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
@@ -60,33 +60,25 @@
         .logo-container img { height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
-
-        /* Header Status Light */
-        .header-status { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.95rem; border: 1px solid var(--card-border);}
-        [data-theme="dark"] .header-status { background: rgba(255,255,255,0.05); }
-        .status-led { width: 12px; height: 12px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
-        .led-pass { background: var(--pass-color); box-shadow: 0 0 10px var(--pass-color); }
-        .led-fail { background: var(--fail-color); box-shadow: 0 0 10px var(--fail-color); }
+        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; text-align: center; flex-grow: 1; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
 
         .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
         .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
-        /* Main Dashboard Grid */
+        /* Dashboard Grid */
         .dashboard-layout {
             flex: 1 1 0; display: flex; gap: 25px; padding: 25px;
             max-width: 1800px; margin: 0 auto; width: 100%; height: 100%;
         }
 
+        /* Cards Column (Overflow Visible allows tooltip to escape) */
         .cards-column {
-            flex: 0 0 400px; display: flex; flex-direction: column; gap: 25px;
-            height: 100%; overflow-y: auto; padding-right: 10px;
+            flex: 0 0 380px; display: flex; flex-direction: column; gap: 25px;
+            height: 100%; overflow: visible; z-index: 30;
         }
-        .cards-column::-webkit-scrollbar { width: 6px; }
-        .cards-column::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
 
         .chart-section {
-            flex: 1 1 0; display: flex; flex-direction: column; height: 100%;
+            flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20;
         }
         .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px;}
 
@@ -94,25 +86,25 @@
         .card, .chart-section {
             background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--card-border); border-radius: 20px; padding: 25px;
-            box-shadow: var(--shadow); position: relative; z-index: 20;
+            box-shadow: var(--shadow); position: relative;
         }
 
         .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); }
         .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; }
         
-        /* Fixed Tooltip */
+        /* Fixed Tooltip - Aligned to Left to prevent cutting off */
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
             border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
-            position: absolute; top: 130%; left: 50%; transform: translateX(-50%) translateY(-10px);
-            background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 260px; opacity: 0; visibility: hidden;
-            transition: all 0.3s; z-index: 9999; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); pointer-events: none;
+            position: absolute; top: 130%; left: 0; /* Anchor to the left side of the icon */
+            background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
+            transition: all 0.3s; z-index: 9999; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4;
         }
-        .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
-        .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+        .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 10px; border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
+        .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
 
         /* Status & Heartbeats */
         .status-badge { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; padding: 8px 16px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
@@ -137,16 +129,27 @@
         .screenshot { width: 100%; display: block; cursor: pointer; }
         .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: 15px; border: 1px dashed var(--pass-color); }
 
-        /* Mobile Adjustments */
+        /* Floating Bottom Left Status Widget */
+        .global-status-widget {
+            position: fixed; bottom: 25px; left: 25px;
+            background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border); padding: 12px 25px; border-radius: 30px;
+            box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;
+            font-weight: 600; font-size: 0.95rem; z-index: 9999; /* Always on top */
+        }
+        .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
+        .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
+        .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
+
+        /* Mobile */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; }
-            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; }
+            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px;} /* Room for widget */
             .cards-column { flex: 0 0 auto; width: 100%; padding-right: 0; }
             .chart-section { min-height: 500px; flex: 0 0 auto; }
         }
         @media (max-width: 600px) {
-            header { flex-direction: column; text-align: center; }
-            .header-status { width: 100%; justify-content: center; }
+            header { flex-direction: column; gap: 15px; }
         }
     </style>
 </head>
@@ -159,12 +162,6 @@
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
         </a>
         <h1>Peoples Clinic Status Monitoring</h1>
-        
-        <div class="header-status" id="global-status">
-            <div class="status-led" id="global-led"></div>
-            <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
-        </div>
-
         <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">Toggle Theme</button>
     </header>
 
@@ -224,6 +221,12 @@
         </div>
     </div>
 
+    <!-- Floating Bottom Left Status Widget -->
+    <div class="global-status-widget">
+        <div class="status-led" id="global-led"></div>
+        <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
+    </div>
+
     <script>
         // --- 1. Strict Clock-Based Theme ---
         const themeBtn = document.getElementById('theme-btn');
@@ -232,8 +235,7 @@
         function enforceClockTheme() {
             if(manualOverride) return;
             const hour = new Date().getHours();
-            // Dark mode strictly from 18:00 to 05:59
-            const isDaytime = hour >= 6 && hour < 18;
+            const isDaytime = hour >= 6 && hour < 18; // Light mode 6AM to 6PM
             applyTheme(isDaytime ? 'light' : 'dark');
         }
 
@@ -260,13 +262,13 @@
             const led = document.getElementById('global-led');
 
             if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
-                txt.innerHTML = 'Status: <span style="color:var(--fail-color)">Degraded</span>';
+                txt.innerHTML = 'System Status: <span style="color:var(--fail-color)">Degraded</span>';
                 led.className = 'status-led led-fail';
             } else if (globalState.smoke === 'success' || globalState.regression === 'success') {
-                txt.innerHTML = 'Status: <span style="color:var(--pass-color)">Operational</span>';
+                txt.innerHTML = 'System Status: <span style="color:var(--pass-color)">All Operational</span>';
                 led.className = 'status-led led-pass';
             } else {
-                txt.innerHTML = 'Status: <span style="color:var(--inactive-color)">Paused</span>';
+                txt.innerHTML = 'System Status: <span style="color:var(--inactive-color)">Paused</span>';
                 led.className = 'status-led';
             }
         }
@@ -322,7 +324,7 @@
         loadLiveData('smoke', 'smoke', 30);
         loadLiveData('regression', 'regression', 120);
 
-        // --- 3. Split-Data True Time API Sync ---
+        // --- 3. True Time API Sync ---
         async function fetchGlobalHistory() {
             try {
                 const hostname = window.location.hostname;
@@ -356,7 +358,7 @@
                 }
                 window.render3DChart();
             } catch(e) {
-                console.warn("API fallback generated real dates.");
+                console.warn("API fallback used.");
                 let now = new Date();
                 githubHistory.smoke = { x: [new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1,1,1,globalState.smoke === 'failure'?0:1] };
                 githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), now], z: [1, globalState.regression === 'failure'?0:1] };
@@ -365,13 +367,13 @@
         }
         setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 4. Plotly 3D Graph (Clean Native Texts) ---
+        // --- 4. Plotly 3D Graph ---
         window.render3DChart = function() {
             if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let fontColor = isDark ? '#e2e8f0' : '#0f172a';
-            let gridColor = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)';
+            let gridColor = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.15)';
             let passColor = '#10b981'; // Neon Green
             let failColor = '#ef4444'; // Neon Red
 
@@ -397,9 +399,9 @@
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
                     xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 12 }, gridcolor: gridColor, showbackground: false },
-                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
-                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.4)' : 'rgba(255,255,255,0.4)' },
-                    camera: { eye: {x: -1.4, y: -1.9, z: 0.4} } // Adjusted for better readability out of the box
+                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke Test', 'Regression'], showbackground: false },
+                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: isDark ? 'rgba(15,23,42,0.3)' : 'rgba(255,255,255,0.05)' },
+                    camera: { eye: {x: -1.3, y: -1.8, z: 0.3} }
                 },
                 legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
