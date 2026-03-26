@@ -365,22 +365,23 @@
         }
         setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 4. Plotly 3D Graph (Clean Native Texts) ---
+        // --- 4. Plotly 3D Graph (Clean Native Texts & Fixed Camera/Ranges) ---
         window.render3DChart = function() {
             if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let fontColor = isDark ? '#e2e8f0' : '#0f172a';
-            let gridColor = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.15)';
+            let gridColor = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.25)'; // Slightly more visible grid
             let passColor = '#10b981'; // Neon Green
-            let failColor = '#ef4444'; // Neon Red
+            let failColor = '#ef4444'; // Alert Red
             let graphBoxColor = isDark ? 'rgba(15,23,42,0.3)' : 'rgba(255,255,255,0.05)'; /* Extremely soft box */
 
             var traceSmoke = {
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
                 mode: 'lines+markers', name: 'Smoke Monitoring',
                 line: { width: 6, color: '#0ea5e9' }, 
-                marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 1.5, color: '#fff'} },
+                // Removed white line border to stop artifacts
+                marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor) },
                 text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
                 hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
             };
@@ -389,7 +390,8 @@
                 x: githubHistory.reg.x, y: new Array(githubHistory.reg.x.length).fill(1), z: githubHistory.reg.z,
                 mode: 'lines+markers', name: 'Regression Test',
                 line: { width: 6, color: '#8b5cf6' }, 
-                marker: { size: 8, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 1.5, color: '#fff'} },
+                // Removed white line border to stop artifacts
+                marker: { size: 8, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor) },
                 text: githubHistory.reg.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
                 hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
             };
@@ -397,10 +399,17 @@
             var layout = {
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: '#f59e0b', size: 12 }, gridcolor: gridColor, showbackground: false },
-                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false },
-                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: true, backgroundcolor: graphBoxColor },
-                    camera: { eye: {x: -1.4, y: -1.9, z: 0.4} }
+                    // Changed tickfont color to fontColor so it adapts to dark/light theme
+                    xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: fontColor, size: 12 }, gridcolor: gridColor, showbackground: false },
+                    
+                    // Added range [-0.5, 1.5] to give lines breathing room and stop clipping/breaking
+                    yaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false, range: [-0.5, 1.5] },
+                    
+                    // Adjusted top range slightly so "PASS" dots don't hit the ceiling
+                    zaxis: { title: '', tickfont: { color: fontColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.3], showbackground: true, backgroundcolor: graphBoxColor },
+                    
+                    // Adjusted camera to look straighter at the timeline, preventing the downward slanted illusion
+                    camera: { eye: {x: 0.1, y: -2.2, z: 0.6} }
                 },
                 legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
