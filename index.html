@@ -3,81 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeoplesDoctor QA Dashboard</title>
+    <title>Peoples Clinic Status Monitoring</title>
+    <!-- Import Chart.js for the History Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Import Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0d1117; --text: #c9d1d9; --pass: #238636; --fail: #da3633; --card: #161b22; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        h1 { text-align: center; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        .grid { display: flex; gap: 20px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
-        .card { background: var(--card); border: 1px solid #30363d; border-radius: 8px; padding: 20px; width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 14px; margin-bottom: 15px;}
-        .passed { background: var(--pass); color: white; }
-        .failed { background: var(--fail); color: white; }
-        .meta { font-size: 13px; color: #8b949e; line-height: 1.6; }
-        .screenshot { width: 100%; margin-top: 10px; border-radius: 5px; border: 1px solid #30363d; }
+        :root {
+            /* Light Theme (Peoples Doctor vibe) */
+            --bg-mesh-1: #e0f2fe; --bg-mesh-2: #f0fdf4; --bg-mesh-3: #eef2ff;
+            --text-main: #0f172a; --text-muted: #475569;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --card-border: rgba(255, 255, 255, 0.5);
+            --pass-color: #10b981; --pass-glow: rgba(16, 185, 129, 0.5);
+            --fail-color: #ef4444; --fail-glow: rgba(239, 68, 68, 0.5);
+            --inactive-color: #94a3b8; --inactive-glow: rgba(148, 163, 184, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme */
+            --bg-mesh-1: #020617; --bg-mesh-2: #0f172a; --bg-mesh-3: #1e1b4b;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --card-bg: rgba(15, 23, 42, 0.65);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; transition: background-color 0.4s, color 0.4s; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0; min-height: 100vh;
+            color: var(--text-main);
+            overflow-x: hidden;
+            /* 3D Animated Mesh Background */
+            background: linear-gradient(45deg, var(--bg-mesh-1), var(--bg-mesh-2), var(--bg-mesh-3));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Header */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 40px; background: var(--card-bg);
+            backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border);
+            box-shadow: var(--shadow); position: relative; z-index: 10;
+        }
+        .logo-container img { height: 45px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
+        [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(255,255,255,0.2)); }
+        
+        h1 { font-size: 1.5rem; font-weight: 600; margin: 0; text-align: center; flex-grow: 1; letter-spacing: -0.5px;}
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: transparent; border: 1px solid var(--text-muted);
+            color: var(--text-main); padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .theme-toggle:hover { background: var(--text-main); color: var(--card-bg); }
+
+        /* Main Grid */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-bottom: 40px; }
+
+        /* Glassmorphism Cards */
+        .card {
+            background: var(--card-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border); border-radius: 16px;
+            padding: 25px; box-shadow: var(--shadow);
+            position: relative; overflow: visible;
+        }
+
+        /* Tooltip (Hover Description) */
+        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .card h2 { margin: 0; font-size: 1.25rem; }
+        .info-icon {
+            display: inline-flex; justify-content: center; align-items: center;
+            width: 20px; height: 20px; border-radius: 50%; background: var(--text-muted);
+            color: var(--card-bg); font-size: 12px; cursor: help; position: relative;
+        }
+        .tooltip {
+            position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
+            background: var(--text-main); color: var(--card-bg);
+            padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; width: 250px;
+            opacity: 0; visibility: hidden; transition: 0.2s; z-index: 20; text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); font-weight: normal; line-height: 1.4;
+        }
+        .tooltip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border-width: 6px; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
+        }
+        .info-icon:hover .tooltip { opacity: 1; visibility: visible; bottom: 150%; }
+
+        /* Pulsing Status Badges */
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.95rem; padding: 6px 12px; border-radius: 20px; background: rgba(0,0,0,0.05); }
+        [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.05); }
+        
+        .pulse-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        
+        /* Pulse Animations */
+        .status-passed .pulse-dot { background: var(--pass-color); animation: pulse-green 2s infinite; }
+        .status-passed { color: var(--pass-color); }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 var(--pass-glow); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        .status-failed .pulse-dot { background: var(--fail-color); animation: pulse-red 2s infinite; }
+        .status-failed { color: var(--fail-color); }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 var(--fail-glow); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        .status-inactive .pulse-dot { background: var(--inactive-color); } /* No animation for inactive */
+        .status-inactive { color: var(--inactive-color); }
+
+        .meta { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+        
+        /* Screenshots */
+        .screenshot-container { margin-top: 15px; border-radius: 8px; overflow: hidden; border: 1px solid var(--card-border); background: #000; }
+        .screenshot { width: 100%; display: block; opacity: 0.9; transition: opacity 0.3s; }
+        .screenshot:hover { opacity: 1; }
+        .no-failures { padding: 20px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 8px; margin-top: 15px; }
+
+        /* Chart Section */
+        .chart-section { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--card-border); border-radius: 16px; padding: 25px; box-shadow: var(--shadow); margin-bottom: 60px;}
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
+
+        /* Bottom Left Global Status */
+        .global-status {
+            position: fixed; bottom: 20px; left: 20px; background: var(--card-bg);
+            backdrop-filter: blur(10px); border: 1px solid var(--card-border);
+            padding: 10px 20px; border-radius: 30px; box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; z-index: 100;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🚀 Automated QA Dashboard</h1>
+    <header>
+        <div class="logo-container">
+            <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
+        </div>
+        <h1>Peoples Clinic Status Monitoring</h1>
+        <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">🌓 Dark Mode</button>
+    </header>
 
-    <div class="grid">
-        <!-- Smoke Test Card -->
-        <div class="card" id="smoke-card">
-            <h2>💨 10-Minute Smoke Test</h2>
-            <div id="smoke-status" class="status-badge">Loading...</div>
-            <div class="meta">
-                <p><strong>Last Run:</strong> <span id="smoke-time">...</span></p>
-                <p><strong>Environment:</strong> Production</p>
+    <div class="container">
+        <div class="grid">
+            <!-- Smoke Test Card -->
+            <div class="card" id="smoke-card">
+                <div class="title-wrapper">
+                    <h2>💨 10-Minute Smoke Test</h2>
+                    <div class="info-icon">i
+                        <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out of the application to ensure the authentication servers and database are responding.</span>
+                    </div>
+                </div>
+                <div id="smoke-status-badge" class="status-badge status-inactive">
+                    <span class="pulse-dot"></span> <span id="smoke-status-text">Checking...</span>
+                </div>
+                <div class="meta">
+                    <p><strong>Last Checked:</strong> <span id="smoke-time">...</span></p>
+                    <p><strong>Environment:</strong> Production UI</p>
+                </div>
+                <div id="smoke-screenshots"></div>
             </div>
-            <h3>Latest Failure Screenshot:</h3>
-            <div id="smoke-screenshots">No failures! 🎉</div>
+
+            <!-- Regression Test Card -->
+            <div class="card" id="regression-card">
+                <div class="title-wrapper">
+                    <h2>🔍 Regression Monitoring</h2>
+                    <div class="info-icon">i
+                        <span class="tooltip">Deep E2E analysis. Creates a patient, starts a live consultation, injects a WebM audio payload via API, and validates the AI-generated medical note.</span>
+                    </div>
+                </div>
+                <div id="regression-status-badge" class="status-badge status-inactive">
+                    <span class="pulse-dot"></span> <span id="regression-status-text">Checking...</span>
+                </div>
+                <div class="meta">
+                    <p><strong>Last Checked:</strong> <span id="regression-time">...</span></p>
+                    <p><strong>Environment:</strong> Production UI & Backend API</p>
+                </div>
+                <div id="regression-screenshots"></div>
+            </div>
         </div>
 
-        <!-- Regression Test Card -->
-        <div class="card" id="regression-card">
-            <h2>🔍 Hourly Regression Test</h2>
-            <div id="regression-status" class="status-badge">Loading...</div>
-            <div class="meta">
-                <p><strong>Last Run:</strong> <span id="regression-time">...</span></p>
-                <p><strong>Environment:</strong> Production</p>
+        <!-- 3D History Graph -->
+        <div class="chart-section">
+            <div class="title-wrapper">
+                <h2>📈 System Stability History (24h)</h2>
+                <div class="info-icon">i
+                    <span class="tooltip">Visual representation of system uptime based on recent automated test executions. 100% means all checks passed successfully.</span>
+                </div>
             </div>
-            <h3>Latest Failure Screenshot:</h3>
-            <div id="regression-screenshots">No failures! 🎉</div>
+            <div class="chart-container">
+                <canvas id="historyChart"></canvas>
+            </div>
         </div>
     </div>
 
+    <!-- Floating Global Status -->
+    <div class="global-status" id="global-status">
+        <span class="pulse-dot" id="global-dot" style="background: var(--inactive-color);"></span>
+        <span id="global-text">System Status: Analyzing...</span>
+    </div>
+
     <script>
-        // You can write whatever JS you want here! This grabs the JSON files generated by GitHub Actions.
-        async function loadData(testName, cardPrefix) {
+        // --- Theme Management ---
+        const themeBtn = document.getElementById('theme-btn');
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeBtn.innerText = currentTheme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            themeBtn.innerText = currentTheme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
+            updateChartTheme(); // Redraw chart colors
+        }
+
+        // --- Data Fetching & UI Logic ---
+        let globalState = { smoke: 'inactive', regression: 'inactive' };
+
+        async function loadData(testName, cardPrefix, inactiveThresholdMinutes) {
             try {
-                // Fetch the json file generated by the GitHub Action
+                // Cache-busting URL to ensure fresh data
                 const response = await fetch(`${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
                 if (!response.ok) throw new Error("No data yet");
                 const data = await response.json();
 
-                // Update Status Badge
-                const statusEl = document.getElementById(`${cardPrefix}-status`);
-                statusEl.innerText = data.status === 'success' ? '✅ PASSED' : '❌ FAILED';
-                statusEl.className = `status-badge ${data.status === 'success' ? 'passed' : 'failed'}`;
+                const now = new Date();
+                const testTime = new Date(data.timestamp);
+                const diffMinutes = (now - testTime) / (1000 * 60);
 
-                // Update Timestamp
-                document.getElementById(`${cardPrefix}-time`).innerText = new Date(data.timestamp).toLocaleString();
+                const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
+                const textEl = document.getElementById(`${cardPrefix}-status-text`);
+                const timeEl = document.getElementById(`${cardPrefix}-time`);
+                const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
 
-                // Update Screenshots if failed
-                if (data.status === 'failure' && data.screenshots.length > 0) {
-                    const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
-                    // Just show the last screenshot taken (usually the exact point of failure)
-                    const lastImage = data.screenshots[data.screenshots.length - 1];
-                    imgContainer.innerHTML = `<a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot"></a>`;
+                timeEl.innerText = testTime.toLocaleString();
+
+                // Logic to check if test was disabled in GitHub (Old timestamp)
+                if (diffMinutes > inactiveThresholdMinutes) {
+                    badgeEl.className = 'status-badge status-inactive';
+                    textEl.innerText = 'DEACTIVATED / PAUSED';
+                    globalState[testName] = 'inactive';
+                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); background:rgba(0,0,0,0.05);">Test is currently paused.</div>';
+                } else {
+                    // Test is active
+                    if (data.status === 'success') {
+                        badgeEl.className = 'status-badge status-passed';
+                        textEl.innerText = 'PASSING';
+                        globalState[testName] = 'success';
+                        imgContainer.innerHTML = '<div class="no-failures">🎉 No recent failures detected!</div>';
+                    } else {
+                        badgeEl.className = 'status-badge status-failed';
+                        textEl.innerText = 'FAILING';
+                        globalState[testName] = 'failure';
+                        if (data.screenshots && data.screenshots.length > 0) {
+                            const lastImage = data.screenshots[data.screenshots.length - 1];
+                            imgContainer.innerHTML = `<div class="screenshot-container"><a href="${lastImage}" target="_blank"><img src="${lastImage}" class="screenshot" alt="Failure Screenshot"></a></div>`;
+                        }
+                    }
                 }
+                updateGlobalStatus();
             } catch (e) {
-                console.log(`Waiting for first run of ${testName}...`);
+                console.log(`Waiting for ${testName} data...`);
             }
         }
 
-        loadData('smoke', 'smoke');
-        loadData('regression', 'regression');
+        function updateGlobalStatus() {
+            const globalText = document.getElementById('global-text');
+            const globalDot = document.getElementById('global-dot');
+
+            if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
+                globalText.innerText = 'System Status: Degraded (Errors Detected)';
+                globalText.style.color = 'var(--fail-color)';
+                globalDot.style.background = 'var(--fail-color)';
+                globalDot.style.boxShadow = '0 0 10px var(--fail-color)';
+            } else if (globalState.smoke === 'success' || globalState.regression === 'success') {
+                globalText.innerText = 'System Status: All Systems Operational';
+                globalText.style.color = 'var(--pass-color)';
+                globalDot.style.background = 'var(--pass-color)';
+                globalDot.style.boxShadow = '0 0 10px var(--pass-color)';
+            } else {
+                globalText.innerText = 'System Status: Monitoring Paused';
+                globalText.style.color = 'var(--inactive-color)';
+                globalDot.style.background = 'var(--inactive-color)';
+                globalDot.style.boxShadow = 'none';
+            }
+            
+            // Re-render chart based on latest data point
+            renderChart(globalState.smoke === 'failure' || globalState.regression === 'failure' ? 85 : 100);
+        }
+
+        // Run data loaders (Smoke threshold: 30 mins. Regression threshold: 120 mins).
+        loadData('smoke', 'smoke', 30);
+        loadData('regression', 'regression', 120);
+
+        // --- Chart.js 3D Volumetric Graph ---
+        let historyChart;
+        function renderChart(latestScore) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            // Create 3D Gradient Fill
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            if (isDark) {
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.5)'); // Teal/Green glow top
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)'); // Fade to transparent bottom
+            } else {
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+            }
+
+            // Simulated past 24 hours of data + real latest data
+            const labels = ['-24h', '-20h', '-16h', '-12h', '-8h', '-4h', 'Now'];
+            const dataPoints = [100, 100, 100, 85, 100, 100, latestScore];
+
+            if (historyChart) historyChart.destroy();
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'System Stability (%)',
+                        data: dataPoints,
+                        borderColor: '#10b981',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0.4 // Makes the line curved/smooth
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                    scales: {
+                        y: { 
+                            min: 0, max: 105, 
+                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                            ticks: { color: isDark ? '#94a3b8' : '#475569' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: isDark ? '#94a3b8' : '#475569' }
+                        }
+                    },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
+            });
+        }
+
+        function updateChartTheme() {
+            if(globalState.smoke !== 'inactive') {
+                renderChart(globalState.smoke === 'failure' || globalState.regression === 'failure' ? 85 : 100);
+            }
+        }
     </script>
 </body>
 </html>
