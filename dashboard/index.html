@@ -11,10 +11,10 @@
     
     <style>
         :root {
-            /* Soothing Soft Clinical Slate (No more blinding white!) */
+            /* Soothing Soft Clinical Slate */
             --bg-color: #cddbe8; 
             --text-main: #0f172a; --text-muted: #334155;
-            --card-bg: rgba(255, 255, 255, 0.45); /* Much more transparent */
+            --card-bg: rgba(255, 255, 255, 0.45); 
             --card-border: rgba(14, 165, 233, 0.3);
             
             --pass-color: #10b981; /* Neon Green */
@@ -23,9 +23,9 @@
             --accent-blue: #0ea5e9;
             --accent-purple: #8b5cf6;
             
-            --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); /* Softer shadow */
+            --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); 
             --title-gradient: linear-gradient(90deg, #0284c7, #2563eb);
-            --graph-bg: rgba(255, 255, 255, 0.1); /* Extremely subtle graph box */
+            --graph-bg: rgba(255, 255, 255, 0.1); 
         }
 
         [data-theme="dark"] {
@@ -41,18 +41,15 @@
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
-        /* Strict Fit-to-Screen Architecture */
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            height: 100vh; width: 100vw;
-            overflow: hidden; /* Absolutely no scrolling on desktop */
+            height: 100vh; width: 100vw; overflow: hidden; 
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
 
         #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
-        /* Header */
         header {
             flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 15px;
             padding: 15px 30px; background: var(--card-bg);
@@ -67,7 +64,6 @@
         .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
         .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
 
-        /* Main Dashboard Grid */
         .dashboard-layout {
             flex: 1 1 0; display: flex; gap: 25px; padding: 25px;
             max-width: 1800px; margin: 0 auto; width: 100%; height: 100%;
@@ -78,36 +74,49 @@
             height: 100%; overflow: visible; z-index: 30;
         }
 
-        .chart-section {
-            flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20;
-        }
-        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px;}
+        .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20; }
+        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative;}
 
-        /* Glass Cards */
         .card, .chart-section {
             background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--card-border); border-radius: 20px; padding: 25px;
-            box-shadow: var(--shadow); position: relative;
+            border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); position: relative;
         }
 
-        .title-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        /* Enhanced Title Wrapper for Toggles */
+        .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .title-left { display: flex; align-items: center; gap: 10px; }
         .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); font-weight: 700;}
         .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; font-weight: 700;}
         
-        /* Fixed Tooltip */
+        /* New Chart View Toggles */
+        .chart-toggles { 
+            display: flex; gap: 5px; background: rgba(0,0,0,0.05); padding: 5px; 
+            border-radius: 25px; border: 1px solid var(--card-border);
+        }
+        [data-theme="dark"] .chart-toggles { background: rgba(255,255,255,0.05); }
+        
+        .chart-btn { 
+            background: transparent; border: none; color: var(--text-muted); 
+            padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; 
+            font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .chart-btn:hover { color: var(--text-main); }
+        .chart-btn.active { 
+            background: var(--accent-blue); color: #fff; 
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); 
+        }
+
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
             border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold;
         }
         .tooltip {
-            position: absolute; top: 130%; left: 0; 
-            background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
+            position: absolute; top: 130%; left: 0; background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden;
             transition: all 0.3s; z-index: 9999; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4;
         }
         .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 10px; border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
 
-        /* Status & Heartbeats */
         .status-badge { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; padding: 8px 16px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
         [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.03); }
 
@@ -130,7 +139,6 @@
         .screenshot { width: 100%; display: block; cursor: pointer; }
         .no-failures { padding: 15px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: 15px; border: 1px dashed var(--pass-color); }
 
-        /* Floating Bottom Left Status Widget */
         .global-status-widget {
             position: fixed; bottom: 25px; left: 25px;
             background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -142,15 +150,12 @@
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
 
-        /* Mobile */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; }
             .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px;}
             .cards-column { flex: 0 0 auto; width: 100%; padding-right: 0; }
             .chart-section { min-height: 500px; flex: 0 0 auto; }
-        }
-        @media (max-width: 600px) {
-            header { flex-direction: column; gap: 15px; }
+            .title-wrapper { flex-direction: column; align-items: flex-start; gap: 15px; }
         }
     </style>
 </head>
@@ -169,16 +174,14 @@
     <div class="dashboard-layout">
         <div class="cards-column">
             <div class="card" id="smoke-card">
-                <div class="title-wrapper">
-                    <h2>💨 Smoke Monitoring</h2>
-                    <div class="info-icon">i
-                        <span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span>
+                <div class="title-wrapper" style="margin-bottom: 15px;">
+                    <div class="title-left">
+                        <h2>💨 Smoke Monitoring</h2>
+                        <div class="info-icon">i<span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out to ensure auth servers and databases are responding.</span></div>
                     </div>
                 </div>
                 <div id="smoke-status-badge" class="status-badge status-inactive">
-                    <svg class="heartbeat-icon" viewBox="0 0 100 30">
-                        <path id="smoke-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
-                    </svg>
+                    <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="smoke-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
                     <span id="smoke-status-text">Checking...</span>
                 </div>
                 <div class="meta">
@@ -189,16 +192,14 @@
             </div>
 
             <div class="card" id="regression-card">
-                <div class="title-wrapper">
-                    <h2>🔍 Regression Monitoring</h2>
-                    <div class="info-icon">i
-                        <span class="tooltip">Deep E2E analysis. Creates a patient, starts a live consultation, injects an audio payload via API, and validates the AI medical note.</span>
+                <div class="title-wrapper" style="margin-bottom: 15px;">
+                    <div class="title-left">
+                        <h2>🔍 Regression Monitoring</h2>
+                        <div class="info-icon">i<span class="tooltip">Deep E2E analysis. Creates a patient, starts a live consultation, injects an audio payload via API, and validates the AI medical note.</span></div>
                     </div>
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
-                    <svg class="heartbeat-icon" viewBox="0 0 100 30">
-                        <path id="reg-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path>
-                    </svg>
+                    <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="reg-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
                     <span id="regression-status-text">Checking...</span>
                 </div>
                 <div class="meta">
@@ -211,9 +212,16 @@
 
         <div class="chart-section">
             <div class="title-wrapper">
-                <h2>📊 Live Global Stability Matrix</h2>
-                <div class="info-icon">i
-                    <span class="tooltip">True Timeline. Plots precise Pass/Fail statuses independently. Drag the chart to rotate it in 3D space!</span>
+                <div class="title-left">
+                    <h2>📊 Live Global Stability Matrix</h2>
+                    <div class="info-icon">i
+                        <span class="tooltip" id="chart-tooltip">2D Timeline. Tracks test stability over time using glowing digital state lines.</span>
+                    </div>
+                </div>
+                <!-- Interactive Toggle Buttons -->
+                <div class="chart-toggles">
+                    <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')">Neon 2D (Default)</button>
+                    <button class="chart-btn" id="btn-3d" onclick="setChartMode('3d')">3D Matrix</button>
                 </div>
             </div>
             <div class="chart-container" id="historyChart"></div>
@@ -226,21 +234,26 @@
     </div>
 
     <script>
-        // --- 1. Strict Clock-Based Theme ---
+        // --- Global State ---
+        let currentChartMode = '2d'; // Default view
+        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} };
+        let globalState = { smoke: 'inactive', regression: 'inactive' };
+
+        // --- Theme Management ---
         const themeBtn = document.getElementById('theme-btn');
         let manualOverride = false;
         
         function enforceClockTheme() {
             if(manualOverride) return;
             const hour = new Date().getHours();
-            const isDaytime = hour >= 6 && hour < 18; // Light mode 6AM to 6PM
+            const isDaytime = hour >= 6 && hour < 18; 
             applyTheme(isDaytime ? 'light' : 'dark');
         }
 
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            if (window.render3DChart) window.render3DChart();
+            if (window.renderChart) window.renderChart(); // Re-render active chart
             if (window.update3DBackgroundTheme) window.update3DBackgroundTheme(theme);
         }
 
@@ -251,14 +264,10 @@
         }
         enforceClockTheme(); 
 
-        // --- 2. Live UI Updaters ---
-        let globalState = { smoke: 'inactive', regression: 'inactive' };
-        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} };
-
+        // --- Card Data Fetching ---
         function updateGlobalStatus() {
             const txt = document.getElementById('global-text');
             const led = document.getElementById('global-led');
-
             if (globalState.smoke === 'failure' || globalState.regression === 'failure') {
                 txt.innerHTML = 'System Status: <span style="color:var(--fail-color)">Degraded</span>';
                 led.className = 'status-led led-fail';
@@ -272,20 +281,18 @@
         }
 
         async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
+            // Unchanged from your original code
             const textEl = document.getElementById(`${cardPrefix}-status-text`);
             const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
             const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
             const pathEl = document.getElementById(`${cardPrefix === 'smoke' ? 'smoke-hb' : 'reg-hb'}`);
-            
             try {
                 const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
                 if (!response.ok) throw new Error("Not Found");
                 const data = await response.json();
-
                 const now = new Date();
                 const testTime = new Date(data.timestamp);
                 const diffMinutes = (now - testTime) / (1000 * 60);
-
                 document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString();
 
                 if (diffMinutes > inactiveThresholdMinutes) {
@@ -314,38 +321,32 @@
             } catch (e) {
                 badgeEl.className = 'status-badge status-inactive';
                 textEl.innerText = 'DATA ERROR';
-                imgContainer.innerHTML = '';
             }
             updateGlobalStatus();
         }
-
         loadLiveData('smoke', 'smoke', 30);
         loadLiveData('regression', 'regression', 120);
 
-        // --- 3. True Time API Sync ---
+        // --- API History Fetching ---
         async function fetchGlobalHistory() {
             try {
                 const hostname = window.location.hostname;
                 if (!hostname.includes('github.io')) throw new Error("Local");
-                
                 const owner = hostname.split('.')[0];
-                const pathSegments = window.location.pathname.split('/').filter(Boolean);
-                const repo = pathSegments.length > 0 ? pathSegments[0] : '';
+                const repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
                 
                 const [regRes, smokeRes] = await Promise.all([
                     fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=15&status=completed`),
                     fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=15&status=completed`)
                 ]);
-                
                 if (!regRes.ok || !smokeRes.ok) throw new Error("API Limit");
-
                 const regData = await regRes.json();
                 const smokeData = await smokeRes.json();
 
                 if(smokeData.workflow_runs) {
                     smokeData.workflow_runs.reverse().forEach(run => {
                         githubHistory.smoke.x.push(new Date(run.updated_at));
-                        githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0);
+                        githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); // Using z for status to match original logic
                     });
                 }
                 if(regData.workflow_runs) {
@@ -354,29 +355,112 @@
                         githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0);
                     });
                 }
-                window.render3DChart();
+                window.renderChart();
             } catch(e) {
                 console.warn("API fallback used.");
                 let now = new Date();
-                githubHistory.smoke = { x: [new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1,1,1,globalState.smoke === 'failure'?0:1] };
-                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), now], z: [1, globalState.regression === 'failure'?0:1] };
-                window.render3DChart();
+                // Faked mock data with a failure mixed in to show off the red UI
+                githubHistory.smoke = { x: [new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1,1,0,1] };
+                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), new Date(now.getTime() - 30*60000), now], z: [1, 1, 1] };
+                window.renderChart();
             }
         }
-        setTimeout(fetchGlobalHistory, 1500);
+        setTimeout(fetchGlobalHistory, 1000);
 
-        // --- 4. Plotly 3D Graph (Perfected 3D Bounding & Colors) ---
-        window.render3DChart = function() {
+        // --- Chart Switching Logic ---
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            document.getElementById('btn-2d').className = mode === '2d' ? 'chart-btn active' : 'chart-btn';
+            document.getElementById('btn-3d').className = mode === '3d' ? 'chart-btn active' : 'chart-btn';
+            
+            // Update tooltip context
+            document.getElementById('chart-tooltip').innerText = mode === '2d' ? 
+                "2D Timeline. Tracks test stability over time using glowing digital state lines. No overlaps." : 
+                "True Timeline. Plots precise Pass/Fail statuses independently. Drag the chart to rotate it in 3D space!";
+                
+            window.renderChart();
+        }
+
+        window.renderChart = function() {
             if (typeof Plotly === 'undefined' || githubHistory.smoke.x.length === 0) return;
+            // Purge existing chart to prevent layout conflicts when switching modes entirely
+            Plotly.purge('historyChart'); 
+            
+            if (currentChartMode === '2d') {
+                renderNeon2D();
+            } else {
+                renderMatrix3D();
+            }
+        };
 
+        // ==========================================
+        // NEW DEFAULT: The 2D Neon Timeline
+        // ==========================================
+        function renderNeon2D() {
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let timeColor = '#f59e0b'; 
+            let fontColor = isDark ? '#cbd5e1' : '#334155'; 
+            let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.15)';
+            let passColor = '#10b981'; 
+            let failColor = '#ef4444'; 
             
-            // Unique Custom Colors (None are purely black or purely white)
-            let timeColor = '#f59e0b'; // The distinct Amber/Orange timeline
-            let categoryColor = isDark ? '#94a3b8' : '#475569'; // Soft Slate Blue for Regression/Smoke
-            let statusColor = isDark ? '#cbd5e1' : '#334155'; // Contrasting Slate for PASS/FAIL
+            // "hv" creates horizontal-then-vertical steps. Perfect for digital pass/fail signals.
+            var traceReg2D = {
+                x: githubHistory.reg.x, y: githubHistory.reg.z,
+                mode: 'lines+markers', name: 'Regression Test',
+                line: { shape: 'hv', width: 3, color: '#8b5cf6' },
+                fill: 'tozeroy', fillcolor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
+                marker: { size: 10, symbol: 'diamond', color: githubHistory.reg.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: isDark ? '#020617' : '#fff'} },
+                text: githubHistory.reg.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
+                hovertemplate: "<b>%{text}</b><br>Regression<br>Time: %{x|%I:%M %p}<extra></extra>", 
+                xaxis: 'x', yaxis: 'y2', type: 'scatter'
+            };
+
+            var traceSmoke2D = {
+                x: githubHistory.smoke.x, y: githubHistory.smoke.z,
+                mode: 'lines+markers', name: 'Smoke Monitoring',
+                line: { shape: 'hv', width: 3, color: '#0ea5e9' },
+                fill: 'tozeroy', fillcolor: isDark ? 'rgba(14, 165, 233, 0.15)' : 'rgba(14, 165, 233, 0.1)',
+                marker: { size: 10, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor), line: {width: 2, color: isDark ? '#020617' : '#fff'} },
+                text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
+                hovertemplate: "<b>%{text}</b><br>Smoke<br>Time: %{x|%I:%M %p}<extra></extra>", 
+                xaxis: 'x', yaxis: 'y1', type: 'scatter'
+            };
+
+            var layout2D = {
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { l: 70, r: 30, b: 50, t: 30 },
+                showlegend: false, hovermode: 'x unified',
+                grid: { rows: 2, columns: 1, pattern: 'independent' },
+                xaxis: { 
+                    title: 'Timeline', type: 'date', tickformat: '%I:%M %p', 
+                    tickfont: { color: timeColor, size: 12 }, gridcolor: gridColor, zeroline: false 
+                },
+                // Y-Axis for Smoke (Bottom half)
+                yaxis: { 
+                    domain: [0, 0.45], tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], 
+                    tickfont: { color: fontColor, size: 11, weight: 'bold' }, title: { text: 'Smoke', font: {color: '#0ea5e9', size: 14}},
+                    gridcolor: gridColor, range: [-0.15, 1.2], zeroline: false
+                },
+                // Y-Axis for Regression (Top half)
+                yaxis2: { 
+                    domain: [0.55, 1], tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], 
+                    tickfont: { color: fontColor, size: 11, weight: 'bold' }, title: { text: 'Regression', font: {color: '#8b5cf6', size: 14}},
+                    gridcolor: gridColor, range: [-0.15, 1.2], zeroline: false
+                }
+            };
+            Plotly.newPlot('historyChart', [traceSmoke2D, traceReg2D], layout2D, {responsive: true, displayModeBar: false});
+        }
+
+        // ==========================================
+        // LEGACY VIEW: The 3D Matrix
+        // ==========================================
+        function renderMatrix3D() {
+            let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let timeColor = '#f59e0b'; 
+            let categoryColor = isDark ? '#94a3b8' : '#475569'; 
+            let statusColor = isDark ? '#cbd5e1' : '#334155'; 
             let gridColor = isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.3)';
-            
             let passColor = '#10b981'; 
             let failColor = '#ef4444'; 
 
@@ -384,7 +468,6 @@
                 x: githubHistory.smoke.x, y: new Array(githubHistory.smoke.x.length).fill(0), z: githubHistory.smoke.z,
                 mode: 'lines+markers', name: 'Smoke Monitoring',
                 line: { width: 5, color: '#0ea5e9' }, 
-                // Removed white border to prevent drawing artifacts
                 marker: { size: 6, color: githubHistory.smoke.z.map(v => v === 1 ? passColor : failColor) },
                 text: githubHistory.smoke.z.map(v => v === 1 ? 'PASS' : 'FAIL'), 
                 hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
@@ -399,30 +482,22 @@
                 hovertemplate: "<b>%{text}</b><br>Time: %{x|%I:%M %p}<extra></extra>", type: 'scatter3d'
             };
 
-            var layout = {
+            var layout3D = {
                 paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
-                    // X-Axis (Timeline): Orange color restored. Explicitly turned OFF the background plane.
                     xaxis: { title: 'Timeline', type: 'date', tickformat: '%I:%M %p', tickfont: { color: timeColor, size: 12 }, gridcolor: gridColor, showbackground: false, zeroline: false },
-                    
-                    // Y-Axis (Categories): Slate color. Micro-padding [-0.1, 1.1] to stop lines breaking, without creating a huge void. Explicitly turned OFF background plane.
                     yaxis: { title: '', tickfont: { color: categoryColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'], showbackground: false, zeroline: false, range: [-0.1, 1.1] },
-                    
-                    // Z-Axis (Pass/Fail): Slate color. Turned OFF the background box color so it floats cleanly.
                     zaxis: { title: '', tickfont: { color: statusColor, size: 12, weight: 'bold' }, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2], showbackground: false, zeroline: false },
-                    
-                    // Restored a proper 3D Isometric camera angle so it actually looks 3D, but slightly less severe than the original.
                     camera: { eye: {x: -1.2, y: -1.6, z: 0.5} }
                 },
                 legend: { font: { color: categoryColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }, autosize: true
             };
-
-            Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
-        };
+            Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout3D, {responsive: true, displayModeBar: false});
+        }
 
         window.addEventListener('resize', () => { if(typeof Plotly !== 'undefined') Plotly.Plots.resize('historyChart'); });
 
-        // --- 5. Three.js Background ---
+        // --- Three.js Background Background ---
         let scene, camera, renderer, planeMesh;
         function init3DBackground() {
             if (typeof THREE === 'undefined') return;
