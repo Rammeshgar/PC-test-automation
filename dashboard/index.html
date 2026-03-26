@@ -531,8 +531,29 @@
                     light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } }
                 },
                 xAxis3D: {
-                    type: 'time', name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' },
-                    axisLabel: { formatter: '{hh}:{mm} {a}', color: '#f59e0b', fontWeight: '600' },
+                    type: 'time', 
+                    name: 'Timeline', 
+                    nameGap: 35, // 1. Pushes the word "Timeline" further away from the axis
+                    nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' },
+                    axisLabel: { 
+                        margin: 12, // Pushes labels slightly away from the line
+                        // 2. Use a function formatter to fix the literal "{a}" bug in WebGL
+                        formatter: function (value) {
+                            let date = new Date(value);
+                            let hours = date.getHours();
+                            let minutes = date.getMinutes().toString().padStart(2, '0');
+                            let ampm = hours >= 12 ? 'PM' : 'AM';
+                            hours = hours % 12;
+                            hours = hours ? hours : 12;
+                            return `${hours}:${minutes} ${ampm}`;
+                        }, 
+                        color: '#f59e0b', 
+                        fontWeight: '600' 
+                    },
+                    // 3. Hide the blue exact-time hover label (your main tooltip already shows this)
+                    axisPointer: {
+                        label: { show: false }
+                    },
                     splitLine: { lineStyle: { color: gridColor } },
                     axisLine: { lineStyle: { color: axisLineColor } }
                 },
