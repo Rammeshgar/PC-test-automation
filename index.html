@@ -233,7 +233,6 @@
             if (savedTheme) {
                 applyTheme(savedTheme);
             } else {
-                // Smart Auto-Theme: 6am-6pm Light, 6pm-6am Dark
                 const hour = new Date().getHours();
                 applyTheme((hour >= 6 && hour < 18) ? 'light' : 'dark');
             }
@@ -242,8 +241,8 @@
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            if (window.render3DChart) render3DChart(); // Redraw chart colors
-            if (window.update3DBackgroundTheme) update3DBackgroundTheme(theme);
+            if (typeof render3DChart === "function") render3DChart();
+            if (typeof update3DBackgroundTheme === "function") update3DBackgroundTheme(theme);
         }
 
         function toggleThemeManual() {
@@ -252,12 +251,11 @@
             localStorage.setItem('theme', newTheme);
             applyTheme(newTheme);
         }
-
         setSmartTheme();
 
         // --- 2. Global State & UI Updaters ---
         let globalState = { smoke: 'inactive', regression: 'inactive' };
-        let historyData = { times: [], smoke: [], regression: [] }; // Populated by GitHub API later
+        let historyData = { times: [], smoke: [], regression: [] };
 
         function updateGlobalStatus() {
             const txt = document.getElementById('global-text');
@@ -278,29 +276,33 @@
             }
         }
 
-        // --- 3. Current Live Data Loader ---
+        // --- 3. Bulletproof Live Data Loader ---
         async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
+            const textEl = document.getElementById(`${cardPrefix}-status-text`);
+            const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
+            const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
+            const pathEl = document.getElementById(`${cardPrefix === 'smoke' ? 'smoke-hb' : 'reg-hb'}`);
+            
             try {
-                const response = await fetch(`${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
-                if (!response.ok) return;
+                // Ensure we fetch from the correct relative path
+                const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+                
                 const data = await response.json();
-
                 const now = new Date();
                 const testTime = new Date(data.timestamp);
                 const diffMinutes = (now - testTime) / (1000 * 60);
 
-                const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
-                const textEl = document.getElementById(`${cardPrefix}-status-text`);
-                const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
-                const pathEl = document.getElementById(`${cardPrefix === 'smoke' ? 'smoke-hb' : 'reg-hb'}`);
-                
                 document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString();
 
                 if (diffMinutes > inactiveThresholdMinutes) {
                     badgeEl.className = 'status-badge status-inactive';
                     textEl.innerText = 'PAUSED';
                     pathEl.setAttribute('d', 'M0 15 L100 15');
-                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor offline.</div>';
+                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor offline/paused.</div>';
                     globalState[testName] = 'inactive';
                 } else {
                     globalState[testName] = data.status;
@@ -319,54 +321,63 @@
                         }
                     }
                 }
-                updateGlobalStatus();
-            } catch (e) { console.log("Awaiting latest data..."); }
+            } catch (e) {
+                // Safely catch errors so the rest of the site doesn't break
+                console.error(`Error loading ${testName}:`, e);
+                badgeEl.className = 'status-badge status-inactive';
+                textEl.innerText = 'DATA ERROR';
+                pathEl.setAttribute('d', 'M0 15 L100 15');
+                imgContainer.innerHTML = `<div class="no-failures" style="color:var(--fail-color); border-color:var(--fail-color)">Could not read test data. (${e.message})</div>`;
+            }
+            updateGlobalStatus();
         }
 
         loadLiveData('smoke', 'smoke', 30);
         loadLiveData('regression', 'regression', 120);
 
-        // --- 4. Global GitHub History Sync (The Magic Fix) ---
-        // This dynamically finds your repo and fetches real history from GitHub's public API!
+        // --- 4. Safe GitHub History Sync ---
         async function fetchGlobalHistory() {
             try {
-                // Auto-detect Repo from URL (e.g. rammeshgar.github.io/peoplesclinic-qa -> Rammeshgar/peoplesclinic-qa)
                 const hostname = window.location.hostname;
-                const path = window.location.pathname.replace(/\//g, '');
-                if (!hostname.includes('github.io')) throw new Error("Localhost");
+                if (!hostname.includes('github.io')) throw new Error("Localhost detected");
                 
                 const owner = hostname.split('.')[0];
-                const repo = path;
+                // Safely extract repo name even if URL has trailing slashes or index.html
+                const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                const repo = pathSegments.length > 0 ? pathSegments[0] : '';
                 
-                // Fetch recent runs for both workflows
                 const regRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=10&status=completed`);
                 const smokeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=10&status=completed`);
                 
+                if (!regRes.ok || !smokeRes.ok) throw new Error("GitHub API Rate Limited");
+
                 const regData = await regRes.json();
                 const smokeData = await smokeRes.json();
 
-                // Process times (reverse to make oldest first)
                 let timesMap = {};
-                smokeData.workflow_runs.reverse().forEach(run => {
-                    let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
-                    timesMap[t].smoke = run.conclusion === 'success' ? 1 : 0;
-                });
-                regData.workflow_runs.reverse().forEach(run => {
-                    let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
-                    timesMap[t].reg = run.conclusion === 'success' ? 1 : 0;
-                });
+                if(smokeData.workflow_runs) {
+                    smokeData.workflow_runs.reverse().forEach(run => {
+                        let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
+                        timesMap[t].smoke = run.conclusion === 'success' ? 1 : 0;
+                    });
+                }
+                if(regData.workflow_runs) {
+                    regData.workflow_runs.reverse().forEach(run => {
+                        let t = new Date(run.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        if(!timesMap[t]) timesMap[t] = { smoke: null, reg: null };
+                        timesMap[t].reg = run.conclusion === 'success' ? 1 : 0;
+                    });
+                }
 
-                // Extract aligned data
                 historyData.times = Object.keys(timesMap);
                 historyData.smoke = historyData.times.map(t => timesMap[t].smoke !== null ? timesMap[t].smoke : 1);
                 historyData.regression = historyData.times.map(t => timesMap[t].reg !== null ? timesMap[t].reg : 1);
                 
                 render3DChart();
             } catch(e) {
-                // Fallback if API fails or running locally
-                console.log("GitHub API Sync skipped. Using placeholder for graph.");
+                console.warn("GitHub API Sync failed (using simulated fallback):", e);
+                // Graceful fallback so the graph isn't empty
                 historyData = {
                     times: ['-4h', '-3h', '-2h', '-1h', 'Now'],
                     smoke: [1, 1, 1, 1, globalState.smoke === 'failure' ? 0 : 1],
@@ -375,129 +386,110 @@
                 render3DChart();
             }
         }
-        
-        setTimeout(fetchGlobalHistory, 1000); // Give live data time to load first
+        setTimeout(fetchGlobalHistory, 1500);
 
-        // --- 5. Plotly True 3D Graph (Pass/Fail specific) ---
-        function render3DChart() {
+        // --- 5. Safe Plotly 3D Graph ---
+        window.render3DChart = function() {
+            if (typeof Plotly === 'undefined') {
+                console.warn("Plotly library blocked by browser.");
+                document.getElementById('historyChart').innerHTML = "<p style='text-align:center; margin-top:50px; color:var(--text-muted)'>Graph library blocked by network/adblocker.</p>";
+                return;
+            }
             if (historyData.times.length === 0) return;
 
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             let fontColor = isDark ? '#f8fafc' : '#0f172a';
             let gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
-            let ySmoke = new Array(historyData.times.length).fill(0);
-            let yReg = new Array(historyData.times.length).fill(1);
-
-            // Hover Template: "Smoke Test at 10:00 AM<br>Status: PASS"
             let hoverTemplate = "<b>%{text}</b><br>Time: %{x}<extra></extra>";
 
             var traceSmoke = {
-                x: historyData.times, y: ySmoke, z: historyData.smoke,
+                x: historyData.times, y: new Array(historyData.times.length).fill(0), z: historyData.smoke,
                 mode: 'lines+markers', name: 'Smoke Test',
-                line: { width: 10, color: '#0ea5e9' }, // Cyan
-                marker: { size: 6, color: '#0ea5e9' },
-                text: historyData.smoke.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'),
-                hovertemplate: hoverTemplate,
-                type: 'scatter3d'
+                line: { width: 10, color: '#0ea5e9' }, marker: { size: 6, color: '#0ea5e9' },
+                text: historyData.smoke.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), hovertemplate: hoverTemplate, type: 'scatter3d'
             };
 
             var traceReg = {
-                x: historyData.times, y: yReg, z: historyData.regression,
+                x: historyData.times, y: new Array(historyData.times.length).fill(1), z: historyData.regression,
                 mode: 'lines+markers', name: 'Regression Test',
-                line: { width: 10, color: '#3b82f6' }, // Blue
-                marker: { size: 6, color: '#3b82f6' },
-                text: historyData.regression.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'),
-                hovertemplate: hoverTemplate,
-                type: 'scatter3d'
+                line: { width: 10, color: '#3b82f6' }, marker: { size: 6, color: '#3b82f6' },
+                text: historyData.regression.map(v => v === 1 ? 'Status: PASS' : 'Status: FAIL'), hovertemplate: hoverTemplate, type: 'scatter3d'
             };
 
             var layout = {
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-                margin: { l: 0, r: 0, b: 0, t: 0 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
                     xaxis: { title: 'Timeline', color: fontColor, gridcolor: gridColor },
-                    yaxis: { 
-                        title: '', color: fontColor, gridcolor: gridColor,
-                        tickvals: [0, 1], ticktext: ['Smoke', 'Regression'] 
-                    },
-                    zaxis: { 
-                        title: 'Result', color: fontColor, gridcolor: gridColor,
-                        tickvals: [0, 1], ticktext: ['FAIL', 'PASS'],
-                        range: [-0.2, 1.2] // Gives headroom so lines don't clip the top
-                    },
+                    yaxis: { title: '', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['Smoke', 'Regression'] },
+                    zaxis: { title: 'Result', color: fontColor, gridcolor: gridColor, tickvals: [0, 1], ticktext: ['FAIL', 'PASS'], range: [-0.2, 1.2] },
                     camera: { eye: {x: -1.5, y: -1.5, z: 0.5} }
                 },
                 legend: { font: { color: fontColor }, x: 0.8, y: 0.9, bgcolor: 'rgba(0,0,0,0)' }
             };
 
-            window.render3DChart = () => Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
-            window.render3DChart();
-        }
+            Plotly.newPlot('historyChart', [traceSmoke, traceReg], layout, {responsive: true, displayModeBar: false});
+        };
 
-        // --- 6. Super Cool Three.js 3D Wireframe Background ---
+        // --- 6. Safe Three.js 3D Background ---
         let scene, camera, renderer, planeMesh;
         function init3DBackground() {
-            const canvas = document.getElementById('bg-canvas');
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-
-            // Create a wide, subdivided plane
-            const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
-            
-            // Medical Cyan Wireframe
-            const material = new THREE.MeshBasicMaterial({ 
-                color: 0x0ea5e9, 
-                wireframe: true, 
-                transparent: true, 
-                opacity: document.documentElement.getAttribute('data-theme') === 'dark' ? 0.15 : 0.2 
-            });
-
-            planeMesh = new THREE.Mesh(geometry, material);
-            planeMesh.rotation.x = -Math.PI / 2.5; // Lay it flat and tilt it towards camera
-            planeMesh.position.y = -20;
-            planeMesh.position.z = -40;
-            scene.add(planeMesh);
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
-            animate3D();
-        }
-
-        function update3DBackgroundTheme(theme) {
-            if(planeMesh) {
-                planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.2;
+            if (typeof THREE === 'undefined') {
+                console.warn("Three.js blocked by browser.");
+                return;
             }
+            try {
+                const canvas = document.getElementById('bg-canvas');
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0x0ea5e9, wireframe: true, transparent: true, 
+                    opacity: document.documentElement.getAttribute('data-theme') === 'dark' ? 0.15 : 0.2 
+                });
+
+                planeMesh = new THREE.Mesh(geometry, material);
+                planeMesh.rotation.x = -Math.PI / 2.5; 
+                planeMesh.position.y = -20;
+                planeMesh.position.z = -40;
+                scene.add(planeMesh);
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+                animate3D();
+            } catch (e) { console.warn("3D BG failed to initialize:", e); }
         }
+
+        window.update3DBackgroundTheme = function(theme) {
+            if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.2;
+        };
 
         function animate3D() {
             requestAnimationFrame(animate3D);
+            if(!planeMesh) return;
             const time = Date.now() * 0.001;
-            
-            // Make the vertices wave like fluid data
             const position = planeMesh.geometry.attributes.position;
             for (let i = 0; i < position.count; i++) {
                 const x = position.getX(i);
                 const y = position.getY(i);
-                // Math magic for smooth waves
                 const z = Math.sin(x * 0.1 + time) * 3 + Math.cos(y * 0.1 + time) * 3;
                 position.setZ(i, z);
             }
             position.needsUpdate = true;
-            
-            // Slow rotation
             planeMesh.rotation.z = Math.sin(time * 0.1) * 0.1;
-
             renderer.render(scene, camera);
         }
 
+        // Initialize 3D Background safely
         init3DBackground();
     </script>
+</body>
+</html>
 </body>
 </html>
