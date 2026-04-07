@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import json
 import base64
 import requests
 from datetime import datetime
@@ -157,16 +158,24 @@ def run_regression():
             
             print(f"   - SUCCESS: Consultation is LIVE with ID: {consultation_id}")
 
-            # --- PHASE 4: Inject Full WebM via API ---
+# --- PHASE 4: Inject Full WebM via API ---
             current_stage = "04_Inject_Audio"
             print(f"\n--- PHASE: {current_stage} ---")
-            storage = context.storage_state()
             
-            token_item = next((item for item in storage["origins"][0]["localStorage"] if item["name"] == "pc-accessToken"), None)
-            token = token_item["value"]
-            cookies = "; ".join([f"{c['name']}={c['value']}" for c in context.cookies()])
+            # The developers moved the auth token to Cookies. Let's grab it directly!
+            all_cookies = context.cookies()
+            token = next((c['value'] for c in all_cookies if 'token' in c['name'].lower() or 'auth' in c['name'].lower() or 'pc-cookie' in c['name'].lower()), None)
             
-            inject_webm_via_api(token, cookies, consultation_id)
+            if not token:
+                raise Exception("Cannot find auth token in Cookies! The developers might have logged you out.")
+
+            print("   - ✅ Successfully extracted Auth Token from Cookies.")
+
+            # Format cookies for the API request header
+            cookies_str = "; ".join([f"{c['name']}={c['value']}" for c in all_cookies])
+            
+            # Inject the audio
+            inject_webm_via_api(token, cookies_str, consultation_id)
             
             print("   - Waiting 5 seconds for backend to process the audio file...")
             time.sleep(5)
