@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,7 +103,7 @@
         }
         [data-theme="dark"] .chart-toggles { background: rgba(255,255,255,0.05); }
 
-        /* Custom Date Picker Input */
+        /* Custom Date Picker Inputs */
         .date-picker {
             background: var(--card-bg); border: 1px solid var(--card-border);
             color: var(--text-main); padding: 7px 12px; border-radius: 20px;
@@ -112,14 +112,16 @@
         }
         [data-theme="dark"] .date-picker { color-scheme: dark; }
         .date-picker:hover { border-color: var(--accent-blue); }
+        .date-separator { color: var(--text-muted); font-weight: bold; padding: 0 4px; }
         
         .chart-btn { 
             background: transparent; border: none; color: var(--text-muted); 
             padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; 
             font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 1px solid var(--card-border);
         }
         .chart-btn:hover { color: var(--text-main); }
-        .chart-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); }
+        .chart-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); border-left-color: transparent;}
 
         .info-icon {
             display: flex; justify-content: center; align-items: center; width: 22px; height: 22px;
@@ -184,7 +186,7 @@
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
         </a>
         <h1>Peoples Clinic Status Monitoring</h1>
-        <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">Toggle Theme</button>
+        <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">☀️ Light Mode</button>
     </header>
 
     <div class="dashboard-layout">
@@ -231,14 +233,16 @@
                 <div class="title-left">
                     <h2>📊 Live Global Stability Matrix</h2>
                     <div class="info-icon">i
-                        <span class="tooltip" id="chart-tooltip">ECharts Timeline. View historical stability via interactive slider or Calendar date picker.</span>
+                        <span class="tooltip" id="chart-tooltip">View historical stability. Defaults to 24hrs. Click on any data dot to view detailed GitHub logs and screenshots!</span>
                     </div>
                 </div>
                 <div class="chart-toggles">
-                    <!-- NEW CALENDAR FILTER -->
-                    <input type="date" id="history-date" class="date-picker" title="Filter History by Date" />
+                    <!-- DATE RANGE FILTER -->
+                    <input type="date" id="start-date" class="date-picker" title="Start Date" />
+                    <span class="date-separator">to</span>
+                    <input type="date" id="end-date" class="date-picker" title="End Date" />
                     
-                    <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')">Neon 2D Timeline</button>
+                    <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')" style="margin-left: 8px;">Neon 2D Timeline</button>
                     <button class="chart-btn" id="btn-3d" onclick="setChartMode('3d')">3D WebGL Matrix</button>
                 </div>
             </div>
@@ -255,20 +259,12 @@
     <script>
         let currentChartMode = '2d'; 
         let eChartInstance = null; 
-        let githubHistory = { smoke: {x:[], z:[]}, reg: {x:[], z:[]} };
+        // Modified to store html_url for click events!
+        let githubHistory = { smoke: {x:[], z:[], url:[]}, reg: {x:[], z:[], url:[]} };
         let globalState = { smoke: 'inactive', regression: 'inactive' };
 
-        // --- Theme Management ---
+        // --- Theme Management (Dark Mode Default) ---
         const themeBtn = document.getElementById('theme-btn');
-        let manualOverride = false;
-        
-        function enforceClockTheme() {
-            if(manualOverride) return;
-            const hour = new Date().getHours();
-            const isDaytime = hour >= 6 && hour < 18; 
-            applyTheme(isDaytime ? 'light' : 'dark');
-        }
-
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             themeBtn.innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
@@ -277,11 +273,9 @@
         }
 
         function toggleThemeManual() {
-            manualOverride = true;
             const current = document.documentElement.getAttribute('data-theme');
             applyTheme(current === 'light' ? 'dark' : 'light');
         }
-        enforceClockTheme(); 
 
         // --- Card Data Fetching ---
         function updateGlobalStatus() {
@@ -343,11 +337,10 @@
             updateGlobalStatus();
         }
         
-        // INCREASED TO 120 MINS threshold. Fixes the "Paused" bug caused by GitHub dropping frequent crons.
         loadLiveData('smoke', 'smoke', 120);
         loadLiveData('regression', 'regression', 150);
 
-        // --- API History Fetching (Pulls 100 entries now) ---
+        // --- API History Fetching ---
         async function fetchGlobalHistory() {
             try {
                 const hostname = window.location.hostname;
@@ -355,6 +348,7 @@
                 const owner = hostname.split('.')[0];
                 const repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
                 
+                // Fetching up to 100 recent runs for data populating
                 const [regRes, smokeRes] = await Promise.all([
                     fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?per_page=100&status=completed`),
                     fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?per_page=100&status=completed`)
@@ -367,55 +361,76 @@
                     smokeData.workflow_runs.reverse().forEach(run => {
                         githubHistory.smoke.x.push(new Date(run.updated_at));
                         githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); 
+                        githubHistory.smoke.url.push(run.html_url); // Store URL for click event
                     });
                 }
                 if(regData.workflow_runs) {
                     regData.workflow_runs.reverse().forEach(run => {
                         githubHistory.reg.x.push(new Date(run.updated_at));
                         githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0);
+                        githubHistory.reg.url.push(run.html_url); // Store URL for click event
                     });
                 }
                 window.renderChart();
             } catch(e) {
                 console.warn("API fallback used.");
                 let now = new Date();
-                githubHistory.smoke = { x: [new Date(now.getTime() - 50*60000), new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000), new Date(now.getTime() - 20*60000), new Date(now.getTime() - 10*60000)], z: [1, 1, 0, 0, 1] };
-                githubHistory.reg = { x: [new Date(now.getTime() - 60*60000), new Date(now.getTime() - 30*60000), now], z: [1, 0, 1] };
+                githubHistory.smoke = { 
+                    x: [new Date(now.getTime() - 50*60000), new Date(now.getTime() - 40*60000), new Date(now.getTime() - 30*60000)], 
+                    z: [1, 0, 1], url: ['#','#','#'] 
+                };
+                githubHistory.reg = { 
+                    x: [new Date(now.getTime() - 60*60000), new Date(now.getTime() - 30*60000), now], 
+                    z: [1, 0, 1], url: ['#','#','#'] 
+                };
                 window.renderChart();
             }
         }
         setTimeout(fetchGlobalHistory, 1000);
 
-        // --- NEW: Calendar Date Picker Logic ---
-        document.getElementById('history-date').addEventListener('change', (e) => {
-            if (currentChartMode !== '2d') {
-                setChartMode('2d'); // Switch to 2D where zooming works best natively
+        // --- NEW: Calendar Date Range Picker Logic ---
+        function applyDateFilter() {
+            if (!eChartInstance) return;
+            const startDateStr = document.getElementById('start-date').value;
+            const endDateStr = document.getElementById('end-date').value;
+
+            // If empty, reset to last 24 hours
+            if (!startDateStr && !endDateStr) {
+                let now = new Date().getTime();
+                eChartInstance.dispatchAction({
+                    type: 'dataZoom', startValue: now - (24 * 60 * 60 * 1000), endValue: now
+                });
+                return;
+            }
+
+            let startTimestamp = null;
+            let endTimestamp = null;
+
+            if (startDateStr) {
+                const parts = startDateStr.split('-');
+                startTimestamp = new Date(parts[0], parts[1] - 1, parts[2]).setHours(0, 0, 0, 0);
             }
             
+            if (endDateStr) {
+                const parts = endDateStr.split('-');
+                endTimestamp = new Date(parts[0], parts[1] - 1, parts[2]).setHours(23, 59, 59, 999);
+            }
+
+            // Logic to handle if only one date is selected
+            if (startTimestamp && !endTimestamp) endTimestamp = new Date().getTime(); // To Now
+            if (!startTimestamp && endTimestamp) startTimestamp = endTimestamp - (24 * 60 * 60 * 1000); // 24h before End
+
+            if (currentChartMode !== '2d') setChartMode('2d');
+            
             setTimeout(() => {
-                if (!eChartInstance) return;
-                
-                if (!e.target.value) {
-                    // Reset Zoom
-                    eChartInstance.dispatchAction({ type: 'dataZoom', start: 0, end: 100 });
-                    return;
-                }
-                
-                // Parse Local Date correctly
-                const parts = e.target.value.split('-');
-                const selectedDate = new Date(parts[0], parts[1] - 1, parts[2]);
-                
-                const startOfDay = selectedDate.setHours(0, 0, 0, 0);
-                const endOfDay = selectedDate.setHours(23, 59, 59, 999);
-                
-                // Programmatically slide the bar to the selected day
                 eChartInstance.dispatchAction({
-                    type: 'dataZoom',
-                    startValue: startOfDay,
-                    endValue: endOfDay
+                    type: 'dataZoom', startValue: startTimestamp, endValue: endTimestamp
                 });
             }, 100);
-        });
+        }
+
+        document.getElementById('start-date').addEventListener('change', applyDateFilter);
+        document.getElementById('end-date').addEventListener('change', applyDateFilter);
 
         // --- Chart Switching Logic ---
         function setChartMode(mode) {
@@ -442,10 +457,21 @@
             } else {
                 renderMatrix3DECharts();
             }
+
+            // --- CLICK EVENT FOR GITHUB ARTIFACTS ---
+            eChartInstance.on('click', function (params) {
+                // The URL is stored at the end of the array (Index 2 for 2D, Index 3 for 3D)
+                let urlIndex = currentChartMode === '2d' ? 2 : 3;
+                let url = params.value[urlIndex];
+                
+                if (url && url !== '#') {
+                    window.open(url, '_blank');
+                }
+            });
         };
 
         // ==========================================
-        // VIEW 1: 2D Neon Timeline (NOW WITH SLIDER)
+        // VIEW 1: 2D Neon Timeline (With Slider & 24h Default)
         // ==========================================
         function renderNeon2DECharts() {
             let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -453,8 +479,13 @@
             let fontColor = isDark ? '#94a3b8' : '#334155';
             let crosshairColor = isDark ? 'rgba(14, 165, 233, 0.4)' : 'rgba(14, 165, 233, 0.6)';
 
-            let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i]]);
-            let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i]]);
+            // Data format: [Time, Status, GitHub_URL]
+            let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
+            let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i]]);
+
+            // Calculate exact Last 24 Hours timestamp
+            let now = new Date().getTime();
+            let oneDayAgo = now - (24 * 60 * 60 * 1000);
 
             let option = {
                 tooltip: {
@@ -477,22 +508,20 @@
                                     <span style="font-weight:700; color:${sColor}; letter-spacing: 0.5px;">${p.value[1] === 1 ? 'PASS' : 'FAIL'}</span>
                                 </div>`;
                         });
+                        html += `<div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click dot for Logs & Screenshots</div>`;
                         return html;
                     }
                 },
-                // NEW: Timeline Slider Configuration
+                // Default Zoom set to 24 Hours exactly
                 dataZoom: [
                     {
-                        type: 'slider', show: true, xAxisIndex: [0, 1], // Attach to both Regression & Smoke Grids
-                        bottom: 10, height: 20,
-                        borderColor: gridColor,
-                        textStyle: { color: fontColor },
+                        type: 'slider', show: true, xAxisIndex: [0, 1],
+                        bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor },
                         fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)',
-                        handleStyle: { color: '#0ea5e9', borderColor: '#fff' }
+                        handleStyle: { color: '#0ea5e9', borderColor: '#fff' },
+                        startValue: oneDayAgo, endValue: now
                     },
-                    {
-                        type: 'inside', xAxisIndex: [0, 1] // Enables mouse scroll wheel zooming
-                    }
+                    { type: 'inside', xAxisIndex: [0, 1], startValue: oneDayAgo, endValue: now }
                 ],
                 grid: [
                     { top: '8%', height: '32%', left: '80px', right: '30px' },
@@ -523,14 +552,14 @@
                 series: [
                     {
                         name: 'Regression Test', type: 'line', xAxisIndex: 0, yAxisIndex: 0,
-                        data: regData, step: 'end', symbol: 'circle', symbolSize: 8,
+                        data: regData, step: 'end', symbol: 'circle', symbolSize: 10,
                         itemStyle: { color: '#8b5cf6', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 },
                         lineStyle: { width: 3, shadowColor: 'rgba(139, 92, 246, 0.5)', shadowBlur: 10 }, 
                         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(139, 92, 246, 0.3)' }, { offset: 1, color: 'rgba(139, 92, 246, 0.0)' }]) }
                     },
                     {
                         name: 'Smoke Monitoring', type: 'line', xAxisIndex: 1, yAxisIndex: 1,
-                        data: smokeData, step: 'end', symbol: 'circle', symbolSize: 8,
+                        data: smokeData, step: 'end', symbol: 'circle', symbolSize: 10,
                         itemStyle: { color: '#0ea5e9', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 },
                         lineStyle: { width: 3, shadowColor: 'rgba(14, 165, 233, 0.5)', shadowBlur: 10 }, 
                         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(14, 165, 233, 0.3)' }, { offset: 1, color: 'rgba(14, 165, 233, 0.0)' }]) }
@@ -549,8 +578,9 @@
             let fontColor = isDark ? '#94a3b8' : '#334155';
             let axisLineColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
-            let smokeData3D = githubHistory.smoke.x.map((d, i) => [d.getTime(), 0, githubHistory.smoke.z[i]]);
-            let regData3D = githubHistory.reg.x.map((d, i) => [d.getTime(), 1, githubHistory.reg.z[i]]);
+            // Data format: [Time, Category(y), Status(z), GitHub_URL]
+            let smokeData3D = githubHistory.smoke.x.map((d, i) => [d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
+            let regData3D = githubHistory.reg.x.map((d, i) => [d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]);
 
             let option = {
                 tooltip: {
@@ -568,7 +598,8 @@
                                     <span style="font-weight:600; color:${params.color}">${params.seriesName}</span>
                                 </div>
                                 <span style="font-weight:700; color:${sColor}; letter-spacing: 0.5px;">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span>
-                            </div>`;
+                            </div>
+                            <div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Logs & Screenshots</div>`;
                         return html;
                     }
                 },
@@ -584,9 +615,7 @@
                     light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } }
                 },
                 xAxis3D: {
-                    type: 'time', 
-                    name: 'Timeline', 
-                    nameGap: 35, 
+                    type: 'time', name: 'Timeline', nameGap: 35, 
                     nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' },
                     axisLabel: { 
                         margin: 12,
@@ -600,8 +629,7 @@
                             hours = hours % 12 || 12;
                             return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
                         }, 
-                        color: '#f59e0b', 
-                        fontWeight: '600' 
+                        color: '#f59e0b', fontWeight: '600' 
                     },
                     splitLine: { lineStyle: { color: gridColor } },
                     axisLine: { lineStyle: { color: axisLineColor } }
@@ -621,9 +649,9 @@
                     axisLine: { lineStyle: { color: axisLineColor } }
                 },
                 series: [
-                    { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 10, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } },
+                    { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } },
                     { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } },
-                    { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 10, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } },
+                    { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } },
                     { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } }
                 ]
             };
@@ -643,7 +671,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
 
             const geometry = new THREE.PlaneGeometry(200, 100, 50, 25);
-            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.1 });
+            const material = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 }); // Increased base opacity for dark mode
 
             planeMesh = new THREE.Mesh(geometry, material);
             planeMesh.rotation.x = -Math.PI / 2.5; 
