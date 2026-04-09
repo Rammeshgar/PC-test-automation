@@ -130,7 +130,7 @@
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
 
-        /* --- NEW: Interactive History Modal Styling --- */
+        /* Modal Styling */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; max-width: 650px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;}
@@ -227,7 +227,7 @@
         </div>
     </div>
 
-    <!-- NEW MODAL FOR EVENT CLICKS -->
+    <!-- MODAL FOR EVENT CLICKS -->
     <div id="history-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">×</button>
@@ -254,7 +254,11 @@
         let githubHistory = { smoke: {x:[], z:[], url:[]}, reg: {x:[], z:[], url:[]} };
         let globalState = { smoke: 'inactive', regression: 'inactive' };
         
-        // Store latest JSON data payload to cross-reference with chart clicks!
+        // --- GLOBAL DATE STATE CONTROL ---
+        // Determines exact bounds for both 2D and 3D plotting
+        let filterStartTime = null;
+        let filterEndTime = null;
+
         let latestRunData = { smoke: null, regression: null };
 
         function applyTheme(theme) {
@@ -293,7 +297,7 @@
                 const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
                 if (!response.ok) throw new Error("Not Found");
                 const data = await response.json();
-                latestRunData[cardPrefix] = data; // Save for modal comparison!
+                latestRunData[cardPrefix] = data; 
                 
                 const now = new Date();
                 const testTime = new Date(data.timestamp);
@@ -368,26 +372,32 @@
         }
         setTimeout(fetchGlobalHistory, 1000);
 
+        // --- FIXED CALENDAR LOGIC ---
         function applyDateFilter() {
-            if (!eChartInstance) return;
             const startDateStr = document.getElementById('start-date').value;
             const endDateStr = document.getElementById('end-date').value;
 
             if (!startDateStr && !endDateStr) {
-                let now = new Date().getTime();
-                eChartInstance.dispatchAction({ type: 'dataZoom', startValue: now - (24 * 60 * 60 * 1000), endValue: now });
-                return;
+                // If inputs are cleared, reset to last 24h
+                filterStartTime = null;
+                filterEndTime = null;
+            } else {
+                // Parse dates properly without timezones shifting them backwards
+                let startTs = startDateStr ? new Date(startDateStr + 'T00:00:00').getTime() : null;
+                let endTs = endDateStr ? new Date(endDateStr + 'T23:59:59.999').getTime() : null;
+
+                // Handle missing start or end
+                if (startTs && !endTs) endTs = new Date().getTime(); 
+                if (!startTs && endTs) startTs = endTs - (24 * 60 * 60 * 1000); 
+
+                filterStartTime = startTs;
+                filterEndTime = endTs;
             }
-
-            let startTimestamp = startDateStr ? new Date(startDateStr.split('-')[0], startDateStr.split('-')[1] - 1, startDateStr.split('-')[2]).setHours(0, 0, 0, 0) : null;
-            let endTimestamp = endDateStr ? new Date(endDateStr.split('-')[0], endDateStr.split('-')[1] - 1, endDateStr.split('-')[2]).setHours(23, 59, 59, 999) : null;
-
-            if (startTimestamp && !endTimestamp) endTimestamp = new Date().getTime();
-            if (!startTimestamp && endTimestamp) startTimestamp = endTimestamp - (24 * 60 * 60 * 1000);
-
-            if (currentChartMode !== '2d') setChartMode('2d');
-            setTimeout(() => { eChartInstance.dispatchAction({ type: 'dataZoom', startValue: startTimestamp, endValue: endTimestamp }); }, 100);
+            
+            // Re-render chart completely to apply bounds globally
+            window.renderChart();
         }
+        
         document.getElementById('start-date').addEventListener('change', applyDateFilter);
         document.getElementById('end-date').addEventListener('change', applyDateFilter);
 
@@ -417,22 +427,19 @@
             document.getElementById('modal-github-link').href = url;
 
             const dynamicContent = document.getElementById('modal-dynamic-content');
-            dynamicContent.innerHTML = ''; // Reset
+            dynamicContent.innerHTML = ''; 
 
-            // Check if this click matches the LATEST recorded run
             let isLatest = false;
             let latestDataObj = latestRunData[dataPrefix];
             
             if (latestDataObj && latestDataObj.timestamp) {
                 const latestTime = new Date(latestDataObj.timestamp).getTime();
-                // If timestamps are within 60 minutes of each other (Actions API and our custom timestamp can vary slightly)
                 if (Math.abs(latestTime - timestamp) < (60 * 60 * 1000)) {
                     isLatest = true;
                 }
             }
 
             if (isLatest && latestDataObj && latestDataObj.screenshots && latestDataObj.screenshots.length > 0) {
-                // IT IS THE LATEST RUN - WE HAVE IMAGES!
                 let html = `<div style="color:var(--text-main); font-weight:bold; margin-bottom:10px;">Execution Screenshots:</div><div class="modal-images">`;
                 latestDataObj.screenshots.forEach(imgUrl => {
                     html += `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="Test Screenshot"/></a>`;
@@ -440,7 +447,6 @@
                 html += `</div>`;
                 dynamicContent.innerHTML = html;
             } else if (status === 0) {
-                // IT IS HISTORICAL AND FAILED - SHOW WARNING
                 dynamicContent.innerHTML = `
                     <div class="historic-warning">
                         <strong>Historical Artifacts Zipped</strong><br><br>
@@ -449,7 +455,6 @@
                         Click the button below to view the logs and download the attached Screenshots artifact.
                     </div>`;
             } else {
-                // HISTORICAL AND PASSED
                  dynamicContent.innerHTML = `<div class="no-failures" style="margin-bottom:20px;">✅ Test completed successfully without errors. No screenshots required.</div>`;
             }
 
@@ -465,17 +470,10 @@
 
             if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
-            // MODAL CLICK LISTENER
             eChartInstance.on('click', function (params) {
                 let urlIndex = currentChartMode === '2d' ? 2 : 3;
                 let statusIndex = currentChartMode === '2d' ? 1 : 2;
-                
-                openModal(
-                    params.seriesName,       // Test Type
-                    params.value[0],         // Timestamp
-                    params.value[statusIndex], // Status (0/1)
-                    params.value[urlIndex]   // GitHub URL
-                );
+                openModal(params.seriesName, params.value[0], params.value[statusIndex], params.value[urlIndex]);
             });
         };
 
@@ -487,7 +485,10 @@
             let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
             let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i]]);
 
-            let now = new Date().getTime();
+            // Apply specific bounds or default to 24h
+            let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
+            let displayEnd = filterEndTime || new Date().getTime();
+
             let option = {
                 tooltip: {
                     trigger: 'axis', backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' },
@@ -503,9 +504,24 @@
                         return html;
                     }
                 },
-                dataZoom: [ { type: 'slider', show: true, xAxisIndex: [0, 1], bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: now - (24 * 60 * 60 * 1000), endValue: now }, { type: 'inside', xAxisIndex: [0, 1] } ],
+                dataZoom: [ 
+                    { type: 'slider', show: true, xAxisIndex: [0, 1], bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, 
+                    { type: 'inside', xAxisIndex: [0, 1], startValue: displayStart, endValue: displayEnd } 
+                ],
                 grid: [ { top: '8%', height: '32%', left: '80px', right: '30px' }, { top: '48%', height: '32%', left: '80px', right: '30px' } ],
-                xAxis: [ { type: 'time', gridIndex: 0, show: false }, { type: 'time', gridIndex: 1, splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } }, axisLabel: { formatter: '{MM}-{dd} {hh}:{mm} {a}', color: '#f59e0b', fontWeight: '600', padding: [10, 0, 0, 0] } } ],
+                xAxis: [ 
+                    { type: 'time', gridIndex: 0, show: false }, 
+                    { 
+                        type: 'time', gridIndex: 1, splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } }, 
+                        axisLabel: { 
+                            formatter: function (value) { 
+                                let d = new Date(value); let hrs = d.getHours(); let ampm = hrs >= 12 ? 'PM' : 'AM'; hrs = hrs % 12 || 12; let mins = d.getMinutes().toString().padStart(2, '0');
+                                return `${d.getMonth()+1}-${d.getDate()} ${hrs}:${mins} ${ampm}`;
+                            }, 
+                            color: '#f59e0b', fontWeight: '600', padding: [10, 0, 0, 0] 
+                        } 
+                    } 
+                ],
                 yAxis: [ { type: 'value', gridIndex: 0, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'Regression', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#8b5cf6', fontSize: 13, fontWeight: 'bold' } }, { type: 'value', gridIndex: 1, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'Smoke', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#0ea5e9', fontSize: 13, fontWeight: 'bold' } } ],
                 series: [
                     { name: 'Regression Test', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: regData, step: 'end', symbol: 'circle', symbolSize: 10, itemStyle: { color: '#8b5cf6', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 }, lineStyle: { width: 3, shadowColor: 'rgba(139, 92, 246, 0.5)', shadowBlur: 10 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(139, 92, 246, 0.3)' }, { offset: 1, color: 'rgba(139, 92, 246, 0.0)' }]) } },
@@ -519,13 +535,33 @@
             let gridColor = isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.4)';
             let fontColor = isDark ? '#94a3b8' : '#334155';
             
-            let smokeData3D = githubHistory.smoke.x.map((d, i) => [d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
-            let regData3D = githubHistory.reg.x.map((d, i) => [d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]);
+            // EXACT MATHEMATICAL FILTERING FOR 3D VIEW
+            let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
+            let displayEnd = filterEndTime || new Date().getTime();
+
+            let smokeData3D = [];
+            githubHistory.smoke.x.forEach((d, i) => {
+                let t = d.getTime();
+                if (t >= displayStart && t <= displayEnd) {
+                    smokeData3D.push([t, 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
+                }
+            });
+
+            let regData3D = [];
+            githubHistory.reg.x.forEach((d, i) => {
+                let t = d.getTime();
+                if (t >= displayStart && t <= displayEnd) {
+                    regData3D.push([t, 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]);
+                }
+            });
 
             let option = {
                 tooltip: { backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } },
                 grid3D: { boxWidth: 200, boxDepth: 80, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
-                xAxis3D: { type: 'time', name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, axisLabel: { formatter: function (value) { let d = new Date(value); return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}, ${d.getHours() % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } },
+                xAxis3D: { 
+                    type: 'time', name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
+                    min: displayStart, max: displayEnd, // ENFORCES STRICT X-AXIS BOUNDARIES IN 3D
+                    axisLabel: { formatter: function (value) { let d = new Date(value); return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}, ${d.getHours() % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } },
                 yAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                 zAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                 series: [ { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } } ]
