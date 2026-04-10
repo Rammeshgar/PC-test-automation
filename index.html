@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peoples Clinic Status Monitoring</title>
     
-    <!-- ECharts Core + ECharts GL (For 3D) -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Updated Google Fonts with 900 (Black) weight for the bolder title -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -52,7 +48,7 @@
 
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            height: 100vh; width: 100vw; overflow: hidden; 
+            height: 100vh; width: 100vw; overflow-x: hidden; /* Prevents mobile scroll issues */
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
@@ -64,13 +60,25 @@
             padding: 15px 30px; background: var(--card-bg);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border); z-index: 50; box-shadow: var(--shadow);
+            flex-wrap: wrap; /* Helps on smaller desktop screens */
         }
         .logo-container img { height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s;}
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-        h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
+        
+        /* 🔥 BIGGER, BOLDER TITLE WITH DROP SHADOW */
+        h1 { 
+            font-size: clamp(1.4rem, 2vw, 2.2rem); 
+            font-weight: 900; 
+            letter-spacing: -0.5px;
+            margin: 0; flex-grow: 1; text-align: center; 
+            background: var(--title-gradient); 
+            -webkit-background-clip: text; 
+            color: transparent;
+            filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.3)); /* Makes gradient pop */
+        }
 
-        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
         .theme-toggle, .music-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;}
         .theme-toggle:hover, .music-toggle:hover { background: var(--accent-blue); color: #fff; }
         .music-toggle.playing { background: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
@@ -81,20 +89,20 @@
         }
 
         .cards-column { flex: 0 0 400px; display: flex; flex-direction: column; gap: 25px; height: 100%; overflow: visible; z-index: 30; }
-        .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20; }
-        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative; overflow: hidden;}
+        .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; z-index: 20; min-width: 0; /* Prevents flex blowout */}
+        .chart-container { flex: 1 1 0; min-height: 400px; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative; overflow: hidden;}
 
         .card, .chart-section { background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); position: relative; }
 
-        .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
         .title-left { display: flex; align-items: center; gap: 10px; }
-        .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); font-weight: 700;}
-        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; font-weight: 700;}
+        .card h2 { margin: 0; font-size: 1.35rem; color: var(--accent-blue); font-weight: 800;}
+        .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.5rem; font-weight: 800;}
         
-        .chart-toggles { display: flex; gap: 8px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 25px; border: 1px solid var(--card-border); align-items: center; }
+        .chart-toggles { display: flex; gap: 8px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 25px; border: 1px solid var(--card-border); align-items: center; flex-wrap: wrap; justify-content: center;}
         [data-theme="dark"] .chart-toggles { background: rgba(255,255,255,0.05); }
 
-        .date-picker { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 7px 12px; border-radius: 20px; font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer; font-weight: 600; }
+        .date-picker { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 7px 12px; border-radius: 20px; font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer; font-weight: 600; width: 130px; }
         [data-theme="dark"] .date-picker { color-scheme: dark; }
         .date-picker:hover { border-color: var(--accent-blue); }
         .date-separator { color: var(--text-muted); font-weight: bold; padding: 0 4px; }
@@ -103,7 +111,7 @@
         .chart-btn:hover { color: var(--text-main); }
         .chart-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); border-left-color: transparent;}
 
-        .info-icon { display: flex; justify-content: center; align-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold; }
+        .info-icon { display: flex; justify-content: center; align-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 13px; cursor: help; position: relative; font-weight: bold; flex-shrink: 0;}
         .tooltip { position: absolute; top: 130%; left: 0; background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; width: 280px; opacity: 0; visibility: hidden; transition: all 0.3s; z-index: 9999; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4; }
         .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 10px; border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
@@ -149,21 +157,36 @@
         .modal-images { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); }
 
+        /* 🔥 MASSIVE MOBILE OPTIMIZATIONS 🔥 */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; }
-            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px;}
+            .dashboard-layout { flex-direction: column; overflow: visible; height: auto; padding-bottom: 100px; padding: 15px;}
             .cards-column { flex: 0 0 auto; width: 100%; padding-right: 0; }
-            .chart-section { min-height: 500px; flex: 0 0 auto; }
-            .title-wrapper { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .chart-toggles { flex-wrap: wrap; }
-            .header-controls { flex-direction: column; align-items: flex-end; gap: 5px;}
+            .chart-section { flex: 0 0 auto; }
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; padding: 15px 10px; text-align: center;}
+            h1 { font-size: 1.5rem; margin: 10px 0;}
+            .dashboard-layout { padding: 10px; gap: 15px;}
+            .card, .chart-section { padding: 15px; border-radius: 15px; }
+            .chart-toggles { flex-direction: column; align-items: stretch; padding: 10px; border-radius: 15px;}
+            .date-picker { width: 100%; text-align: center; margin-bottom: 5px; padding: 10px;}
+            .date-separator { display: none; } /* Hide the 'to' text on small screens */
+            .chart-btn { border-left: none; border-top: 1px solid var(--card-border); margin-top: 5px; padding: 12px; border-radius: 10px;}
+            .chart-btn.active { border-top-color: transparent; }
+            .global-status-widget { bottom: 10px; left: 10px; right: 10px; justify-content: center; }
+            .modal-content { padding: 20px; }
+            .modal-grid { grid-template-columns: 1fr; }
+            .title-wrapper { flex-direction: column; align-items: flex-start; }
+            .tooltip { width: 220px; right: 0; left: auto; } /* Prevent tooltip overflow */
+            .tooltip::before { left: auto; right: 10px; }
         }
     </style>
 </head>
 <body>
 
     <!-- BACKGROUND MUSIC PLAYER -->
-    <!-- Put your .mp3 file in the same folder and make sure the name matches! -->
     <audio id="25 12 2021" loop>
         <source src="./25 12 2021.mp3" type="audio/mpeg">
     </audio>
@@ -262,6 +285,11 @@
         <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
     </div>
 
+    <!-- 🔥 MOVED HEAVY SCRIPTS TO BOTTOM FOR LIGHTHOUSE PERFORMANCE 🔥 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
     <script>
         let currentChartMode = '2d'; 
         let eChartInstance = null; 
@@ -302,7 +330,7 @@
                     // Browser strictly blocked it
                 });
             }
-        }, { once: true }); // 'once: true' ensures this trick only fires one time
+        }, { once: true });
 
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
@@ -435,8 +463,16 @@
                 filterStartTime = null;
                 filterEndTime = null;
             } else {
-                let startTs = startDateStr ? new Date(startDateStr + 'T00:00:00').getTime() : null;
-                let endTs = endDateStr ? new Date(endDateStr + 'T23:59:59.999').getTime() : null;
+                let startTs = null, endTs = null;
+                
+                if (startDateStr) {
+                    let p = startDateStr.split('-');
+                    startTs = new Date(p[0], p[1] - 1, p[2], 0, 0, 0).getTime();
+                }
+                if (endDateStr) {
+                    let p = endDateStr.split('-');
+                    endTs = new Date(p[0], p[1] - 1, p[2], 23, 59, 59, 999).getTime();
+                }
 
                 if (startTs && !endTs) endTs = new Date().getTime(); 
                 if (!startTs && endTs) startTs = endTs - (24 * 60 * 60 * 1000); 
@@ -585,7 +621,6 @@
             let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
             let displayEnd = filterEndTime || new Date().getTime();
 
-            // FIXED: strictly slice array for 3D plot
             let smokeData3D = [];
             githubHistory.smoke.x.forEach((d, i) => {
                 let t = d.getTime();
@@ -606,7 +641,6 @@
                 tooltip: { backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } },
                 grid3D: { boxWidth: 200, boxDepth: 80, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                 
-                // FIXED: Changed type to 'value' with exact Min/Max to enforce strict boundaries
                 xAxis3D: { 
                     type: 'value', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
                     axisLabel: { formatter: function (value) { let d = new Date(value); return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}, ${d.getHours() % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } 
@@ -622,13 +656,50 @@
         let scene, camera, renderer, planeMesh;
         function init3DBackground() {
             if (typeof THREE === 'undefined') return;
-            const canvas = document.getElementById('bg-canvas'); scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            // 🔥 PERFORMANCE FIX: Disable 3D background entirely on Mobile!
+            if (window.innerWidth < 768) {
+                document.body.style.background = "radial-gradient(circle at 50% 50%, var(--bg-color), #000000)";
+                return;
+            }
+
+            const canvas = document.getElementById('bg-canvas'); 
+            scene = new THREE.Scene(); 
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); 
+            
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true }); 
+            
+            // 🔥 PERFORMANCE FIX: Cap Desktop pixel ratio to avoid overworking monitors
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
             planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 100, 50, 25), new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 }));
             planeMesh.rotation.x = -Math.PI / 2.5; planeMesh.position.y = -20; planeMesh.position.z = -40; scene.add(planeMesh);
-            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }); animate3D();
+            
+            window.addEventListener('resize', () => { 
+                if (window.innerWidth >= 768) {
+                    camera.aspect = window.innerWidth / window.innerHeight; 
+                    camera.updateProjectionMatrix(); 
+                    renderer.setSize(window.innerWidth, window.innerHeight); 
+                }
+            }); 
+            animate3D();
         }
         window.update3DBackgroundTheme = function(theme) { if(planeMesh) planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.08; };
-        function animate3D() { requestAnimationFrame(animate3D); if(!planeMesh) return; const time = Date.now() * 0.0008; const position = planeMesh.geometry.attributes.position; for (let i = 0; i < position.count; i++) { const x = position.getX(i); const y = position.getY(i); position.setZ(i, Math.sin(x * 0.1 + time) * 4 + Math.cos(y * 0.1 + time) * 4); } position.needsUpdate = true; planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05; renderer.render(scene, camera); }
+        
+        function animate3D() { 
+            requestAnimationFrame(animate3D); 
+            if(!planeMesh) return; 
+            const time = Date.now() * 0.0008; 
+            const position = planeMesh.geometry.attributes.position; 
+            for (let i = 0; i < position.count; i++) { 
+                const x = position.getX(i); const y = position.getY(i); 
+                position.setZ(i, Math.sin(x * 0.1 + time) * 4 + Math.cos(y * 0.1 + time) * 4); 
+            } 
+            position.needsUpdate = true; 
+            planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05; 
+            renderer.render(scene, camera); 
+        }
         init3DBackground();
     </script>
 </body>
