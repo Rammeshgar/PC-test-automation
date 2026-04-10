@@ -70,8 +70,10 @@
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
         h1 { font-size: clamp(1.2rem, 1.5vw, 1.6rem); font-weight: 700; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent;}
 
-        .theme-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
-        .theme-toggle:hover { background: var(--accent-blue); color: #fff; }
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .theme-toggle, .music-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.3s;}
+        .theme-toggle:hover, .music-toggle:hover { background: var(--accent-blue); color: #fff; }
+        .music-toggle.playing { background: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
 
         .dashboard-layout {
             flex: 1 1 0; display: flex; gap: 25px; padding: 25px;
@@ -154,10 +156,17 @@
             .chart-section { min-height: 500px; flex: 0 0 auto; }
             .title-wrapper { flex-direction: column; align-items: flex-start; gap: 15px; }
             .chart-toggles { flex-wrap: wrap; }
+            .header-controls { flex-direction: column; align-items: flex-end; gap: 5px;}
         }
     </style>
 </head>
 <body>
+
+    <!-- BACKGROUND MUSIC PLAYER -->
+    <!-- Put your .mp3 file in the same folder and make sure the name matches! -->
+    <audio id="bg-music" loop>
+        <source src="./bg-music.mp3" type="audio/mpeg">
+    </audio>
 
     <canvas id="bg-canvas"></canvas>
 
@@ -166,7 +175,12 @@
             <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
         </a>
         <h1>Peoples Clinic Status Monitoring</h1>
-        <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">☀️ Light Mode</button>
+        
+        <div class="header-controls">
+            <!-- Music Toggle Button -->
+            <button class="music-toggle" id="music-btn" onclick="toggleMusic()">🔇 Music Off</button>
+            <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">☀️ Light Mode</button>
+        </div>
     </header>
 
     <div class="dashboard-layout">
@@ -259,6 +273,37 @@
 
         let latestRunData = { smoke: null, regression: null };
 
+        // --- MUSIC AUTOPLAY LOGIC ---
+        const bgMusic = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-btn');
+        let isMusicPlaying = false;
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicBtn.innerText = '🔇 Music Off';
+                musicBtn.classList.remove('playing');
+            } else {
+                bgMusic.play().catch(e => console.log("Audio play blocked by browser"));
+                musicBtn.innerText = '🔊 Music On';
+                musicBtn.classList.add('playing');
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        // The Trick: Play music automatically on the user's VERY FIRST click anywhere on the page
+        document.body.addEventListener('click', function() {
+            if (!isMusicPlaying && bgMusic.paused) {
+                bgMusic.play().then(() => {
+                    isMusicPlaying = true;
+                    musicBtn.innerText = '🔊 Music On';
+                    musicBtn.classList.add('playing');
+                }).catch(e => {
+                    // Browser strictly blocked it
+                });
+            }
+        }, { once: true }); // 'once: true' ensures this trick only fires one time
+
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             document.getElementById('theme-btn').innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
@@ -331,7 +376,6 @@
         loadLiveData('smoke', 'smoke', 120);
         loadLiveData('regression', 'regression', 150);
 
-        // --- NEW: Paginated Fetch Function to bypass 100 limit ---
         async function fetchPaginatedRuns(baseUrl, maxPages) {
             let allRuns = [];
             for (let page = 1; page <= maxPages; page++) {
@@ -341,11 +385,8 @@
                     const data = await res.json();
                     if (!data.workflow_runs || data.workflow_runs.length === 0) break;
                     allRuns = allRuns.concat(data.workflow_runs);
-                    // Stop early if the page wasn't full (meaning it's the last page)
                     if (data.workflow_runs.length < 100) break;
-                } catch (e) {
-                    break; // Handle any network errors gracefully
-                }
+                } catch (e) { break; }
             }
             return allRuns;
         }
@@ -357,7 +398,6 @@
                 const owner = hostname.split('.')[0];
                 const repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
                 
-                // Fetch 2 pages (200 runs) for Regression, 4 pages (400 runs) for Smoke
                 const [regRuns, smokeRuns] = await Promise.all([
                     fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2),
                     fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?status=completed`, 4)
@@ -417,7 +457,6 @@
             window.renderChart();
         }
 
-        // --- MODAL LOGIC ---
         function closeModal() { document.getElementById('history-modal').classList.remove('active'); }
         
         function openModal(testType, timestamp, status, url) {
@@ -546,6 +585,7 @@
             let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
             let displayEnd = filterEndTime || new Date().getTime();
 
+            // FIXED: strictly slice array for 3D plot
             let smokeData3D = [];
             githubHistory.smoke.x.forEach((d, i) => {
                 let t = d.getTime();
@@ -565,10 +605,12 @@
             let option = {
                 tooltip: { backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } },
                 grid3D: { boxWidth: 200, boxDepth: 80, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
+                
+                // FIXED: Changed type to 'value' with exact Min/Max to enforce strict boundaries
                 xAxis3D: { 
-                    type: 'time', name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
-                    min: displayStart, max: displayEnd, 
-                    axisLabel: { formatter: function (value) { let d = new Date(value); return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}, ${d.getHours() % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } },
+                    type: 'value', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
+                    axisLabel: { formatter: function (value) { let d = new Date(value); return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}, ${d.getHours() % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } 
+                },
                 yAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                 zAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                 series: [ { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } } ]
