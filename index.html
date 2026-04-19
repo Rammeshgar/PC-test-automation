@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     
     <!-- 🔥 LIGHTHOUSE FIX: DEFER SCRIPTS 🔥 -->
-    <!-- 'defer' forces the browser to render the HTML/CSS instantly, improving Performance scores massively -->
     <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -56,12 +55,10 @@
 
         * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
 
-        /* 🔥 DESKTOP FIT-SCREEN FIX 🔥 */
         body {
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            height: 100vh; /* Locks body height */
-            width: 100vw; 
-            overflow: hidden; /* Absolutely prevents desktop scrolling */
+            height: 100vh; width: 100vw; 
+            overflow: hidden; 
             display: flex; flex-direction: column;
             color: var(--text-main); background-color: var(--bg-color);
         }
@@ -90,7 +87,6 @@
         .theme-toggle:hover, .music-toggle:hover { background: var(--accent-blue); color: #fff; }
         .music-toggle.playing { background: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
 
-        /* 🔥 STRICT FLEX SETTINGS TO PREVENT OVERFLOW 🔥 */
         .dashboard-layout {
             flex: 1 1 0; display: flex; gap: 20px; padding: 20px;
             max-width: 1800px; margin: 0 auto; width: 100%; min-height: 0;
@@ -98,10 +94,28 @@
 
         .cards-column { flex: 0 0 380px; display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; z-index: 30; }
         .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; min-height: 0; z-index: 20; }
-        .chart-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 15px; position: relative; overflow: hidden;}
+        .chart-container, .table-container { 
+            flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; 
+            background: var(--graph-bg); border: 1px solid var(--card-border); 
+            margin-top: 15px; position: relative; overflow: hidden;
+        }
+        
+        /* 🔥 TABLE SPECIFIC CSS 🔥 */
+        .table-container { display: none; flex-direction: column; padding: 15px; overflow-y: auto; }
+        .table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
+        .export-btn { background: var(--pass-color); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);}
+        .export-btn:hover { background: #059669; }
+        
+        .data-table-wrapper { overflow-y: auto; flex: 1 1 0; border-radius: 8px; border: 1px solid var(--card-border); background: var(--card-bg); }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; text-align: left; }
+        .data-table th { position: sticky; top: 0; background: var(--bg-color); color: var(--accent-blue); padding: 12px 15px; font-weight: 700; border-bottom: 2px solid var(--card-border); z-index: 10;}
+        .data-table td { padding: 12px 15px; border-bottom: 1px solid rgba(14, 165, 233, 0.1); color: var(--text-main); }
+        .data-table tr:hover td { background: rgba(14, 165, 233, 0.05); }
+        .pill-pass { display: inline-block; background: rgba(16, 185, 129, 0.15); color: var(--pass-color); padding: 4px 10px; border-radius: 20px; font-weight: 700; border: 1px solid var(--pass-color); font-size: 0.8rem;}
+        .pill-fail { display: inline-block; background: rgba(239, 68, 68, 0.15); color: var(--fail-color); padding: 4px 10px; border-radius: 20px; font-weight: 700; border: 1px solid var(--fail-color); font-size: 0.8rem;}
 
         .card, .chart-section { background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); position: relative; }
-        .card { display: flex; flex-direction: column; min-height: 0; /* Allows card to shrink if needed */ }
+        .card { display: flex; flex-direction: column; min-height: 0; }
 
         .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
         .title-left { display: flex; align-items: center; gap: 10px; }
@@ -140,7 +154,6 @@
 
         .meta { margin-top: 15px; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
         
-        /* 🔥 CLAMPED SCREENSHOT HEIGHT PREVENTS DESKTOP OVERFLOW 🔥 */
         .screenshot-container { 
             margin-top: auto; border-radius: 10px; overflow: hidden; border: 2px solid var(--fail-color); 
             box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); 
@@ -171,20 +184,14 @@
         .modal-images { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); }
 
-        /* 🔥 MASSIVE MOBILE FIXES FOR GAPS AND SCROLLING 🔥 */
         @media (max-width: 1000px) { 
-            /* Let the body naturally scroll on mobile */
             body { height: auto; overflow-y: auto; overflow-x: hidden; }
-            
-            /* Completely hide 3D canvas on mobile to prevent layout pushes */
             #bg-canvas { display: none !important; }
-            
-            /* Remove fixed heights and let everything stack naturally (Fixes Huge Gap) */
             .dashboard-layout { flex-direction: column; height: auto; padding: 10px; display: block; }
             .cards-column { height: auto; width: 100%; display: block; margin-bottom: 20px; }
             .card { margin-bottom: 20px; }
             .chart-section { height: auto; width: 100%; display: block; }
-            .chart-container { min-height: 500px; height: 500px; } 
+            .chart-container, .table-container { min-height: 500px; height: 500px; } 
         }
 
         @media (max-width: 768px) {
@@ -207,7 +214,6 @@
 </head>
 <body>
 
-    <!-- BACKGROUND MUSIC PLAYER -->
     <audio id="25 12 2021" loop>
         <source src="./25 12 2021.mp3" type="audio/mpeg">
     </audio>
@@ -221,7 +227,6 @@
         <h1>Peoples Clinic Status Monitoring</h1>
         
         <div class="header-controls">
-            <!-- Music Toggle Button -->
             <button class="music-toggle" id="music-btn" onclick="toggleMusic()">🔇 Music Off</button>
             <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">☀️ Light Mode</button>
         </div>
@@ -278,12 +283,41 @@
                     <input type="date" id="end-date" class="date-picker" title="End Date" />
                     <button class="chart-btn active" id="btn-2d" onclick="setChartMode('2d')" style="margin-left: 8px;">Neon 2D Timeline</button>
                     <button class="chart-btn" id="btn-3d" onclick="setChartMode('3d')">3D WebGL Matrix</button>
+                    <!-- 🔥 NEW TABLE BUTTON 🔥 -->
+                    <button class="chart-btn" id="btn-table" onclick="setChartMode('table')">📄 Data Table</button>
                 </div>
             </div>
+            
+            <!-- CHARTS CONTAINER -->
             <div class="chart-container" id="historyChart"></div>
+            
+            <!-- 🔥 NEW TABLE CONTAINER 🔥 -->
+            <div class="table-container" id="tableContainer">
+                <div class="table-header-row">
+                    <div style="font-weight: 700; color: var(--text-main); font-size: 1.1rem;">Detailed Execution Logs</div>
+                    <button class="export-btn" onclick="exportToCSV()">⬇️ Export to CSV (Excel)</button>
+                </div>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Test Workflow</th>
+                                <th>Conclusion</th>
+                                <th>GitHub Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <!-- Rows will be injected here via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
+    <!-- MODALS AND WIDGETS -->
     <div id="history-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">×</button>
@@ -304,9 +338,7 @@
         <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
     </div>
 
-    <!-- 🔥 DELAYED EXECUTION LOGIC TO ENSURE SCRIPTS LOAD WITHOUT BLOCKING PAGE RENDERING 🔥 -->
     <script>
-        // Global variables initialized instantly
         let currentChartMode = '2d'; 
         let eChartInstance = null; 
         let githubHistory = { smoke: {x:[], z:[], url:[]}, reg: {x:[], z:[], url:[]} };
@@ -315,7 +347,6 @@
         let latestRunData = { smoke: null, regression: null };
         let isMusicPlaying = false;
 
-        // Music Logic
         function toggleMusic() {
             const bgMusic = document.getElementById('25 12 2021');
             const musicBtn = document.getElementById('music-btn');
@@ -340,11 +371,14 @@
             }
         }, { once: true });
 
-        // Theme Logic
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             document.getElementById('theme-btn').innerText = theme === 'light' ? '🌓 Dark Mode' : '☀️ Light Mode';
-            if (window.renderChart && window.echarts) window.renderChart(); 
+            
+            // Re-render UI components based on theme change
+            if (currentChartMode === 'table') renderTable();
+            else if (window.renderChart && window.echarts) window.renderChart(); 
+            
             if (window.update3DBackgroundTheme) window.update3DBackgroundTheme(theme);
         }
         function toggleThemeManual() { applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }
@@ -416,11 +450,26 @@
         }
 
         function closeModal() { document.getElementById('history-modal').classList.remove('active'); }
+        
+        // 🔥 MODIFIED TO HANDLE TABLE VIEW 🔥
         function setChartMode(mode) {
             currentChartMode = mode;
             document.getElementById('btn-2d').className = mode === '2d' ? 'chart-btn active' : 'chart-btn';
             document.getElementById('btn-3d').className = mode === '3d' ? 'chart-btn active' : 'chart-btn';
-            if(window.renderChart) window.renderChart();
+            document.getElementById('btn-table').className = mode === 'table' ? 'chart-btn active' : 'chart-btn';
+            
+            const chartDiv = document.getElementById('historyChart');
+            const tableDiv = document.getElementById('tableContainer');
+            
+            if (mode === 'table') {
+                chartDiv.style.display = 'none';
+                tableDiv.style.display = 'flex';
+                renderTable(); // Call new table rendering function
+            } else {
+                chartDiv.style.display = 'block';
+                tableDiv.style.display = 'none';
+                if(window.renderChart) window.renderChart();
+            }
         }
 
         function applyDateFilter() {
@@ -432,16 +481,104 @@
                 if (sT && !eT) eT = new Date().getTime(); if (!sT && eT) sT = eT - (86400000); 
                 filterStartTime = sT; filterEndTime = eT;
             }
-            if(window.renderChart) window.renderChart();
+            
+            // Re-render whichever view is currently active
+            if (currentChartMode === 'table') renderTable();
+            else if(window.renderChart) window.renderChart();
         }
 
-        // ==========================================
-        // 🔥 WRAPPED ALL HEAVY ECHARTS/3D LOGIC 🔥
-        // This ensures they only run AFTER the deferred scripts have finished downloading
-        // ==========================================
-        window.addEventListener('DOMContentLoaded', () => {
+        // 🔥 NEW FUNCTION: Render HTML Table based on active dates 🔥
+        function renderTable() {
+            let displayStart = filterStartTime || 0; 
+            let displayEnd = filterEndTime || new Date().getTime();
+            let combinedData = [];
             
-            // Load live card data immediately (doesn't need ECharts)
+            // Merge Smoke
+            githubHistory.smoke.x.forEach((d, i) => {
+                let t = d.getTime();
+                if (t >= displayStart && t <= displayEnd) {
+                    combinedData.push({ type: '💨 10-Min Smoke Test', time: t, status: githubHistory.smoke.z[i], url: githubHistory.smoke.url[i] });
+                }
+            });
+            // Merge Regression
+            githubHistory.reg.x.forEach((d, i) => {
+                let t = d.getTime();
+                if (t >= displayStart && t <= displayEnd) {
+                    combinedData.push({ type: '🔍 E2E Regression', time: t, status: githubHistory.reg.z[i], url: githubHistory.reg.url[i] });
+                }
+            });
+            
+            // Sort by Newest first
+            combinedData.sort((a, b) => b.time - a.time);
+            
+            let tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            
+            if (combinedData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; font-weight: 600; color: var(--text-muted);">No testing data found for this date range.</td></tr>`;
+                return;
+            }
+            
+            // Generate rows
+            combinedData.forEach(row => {
+                let tr = document.createElement('tr');
+                
+                let dateStr = new Date(row.time).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                let typeColor = row.type.includes('Smoke') ? '#0ea5e9' : '#8b5cf6';
+                let statusHtml = row.status === 1 
+                    ? `<span class="pill-pass">PASS</span>` 
+                    : `<span class="pill-fail">FAIL</span>`;
+                
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${dateStr}</td>
+                    <td style="font-weight: 700; color: ${typeColor};">${row.type}</td>
+                    <td>${statusHtml}</td>
+                    <td><a href="${row.url}" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">View in GitHub ↗</a></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 🔥 NEW FUNCTION: Export Table to CSV 🔥
+        function exportToCSV() {
+            let displayStart = filterStartTime || 0; 
+            let displayEnd = filterEndTime || new Date().getTime();
+            let combinedData = [];
+            
+            githubHistory.smoke.x.forEach((d, i) => {
+                if (d.getTime() >= displayStart && d.getTime() <= displayEnd) {
+                    combinedData.push({ type: 'Smoke Monitoring', time: d.getTime(), status: githubHistory.smoke.z[i] === 1 ? 'PASS' : 'FAIL', url: githubHistory.smoke.url[i] });
+                }
+            });
+            githubHistory.reg.x.forEach((d, i) => {
+                if (d.getTime() >= displayStart && d.getTime() <= displayEnd) {
+                    combinedData.push({ type: 'Regression Test', time: d.getTime(), status: githubHistory.reg.z[i] === 1 ? 'PASS' : 'FAIL', url: githubHistory.reg.url[i] });
+                }
+            });
+            combinedData.sort((a, b) => b.time - a.time);
+            
+            // Generate CSV Structure
+            let csvContent = "Date and Time,Test Workflow,Status,GitHub Actions URL\n";
+            combinedData.forEach(row => {
+                let dateStr = `"${new Date(row.time).toLocaleString()}"`;
+                let type = `"${row.type}"`;
+                let status = `"${row.status}"`;
+                let url = `"${row.url}"`;
+                csvContent += `${dateStr},${type},${status},${url}\n`;
+            });
+            
+            // Download as File
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `PeoplesClinic_Quality_Metrics_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
             loadLiveData('smoke', 'smoke', 120);
             loadLiveData('regression', 'regression', 150);
             
@@ -501,7 +638,6 @@
                             type: 'time', gridIndex: 1, splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } }, 
                             axisLabel: { 
                                 hideOverlap: true,
-                                /* 🔥 THE FIX: Slants text on mobile, shrinks it slightly, and keeps it flat on Desktop */
                                 rotate: window.innerWidth < 768 ? 45 : 0, 
                                 fontSize: window.innerWidth < 768 ? 10 : 12, 
                                 formatter: function (value) { 
@@ -518,44 +654,41 @@
             }
 
             function renderMatrix3DECharts() {
-                        let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                        let gridColor = isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.4)';
-                        let fontColor = isDark ? '#94a3b8' : '#334155';
-                        
-                        let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
-                        let displayEnd = filterEndTime || new Date().getTime();
-            
-                        // Strictly slice array for 3D plot to obey date picker
-                        let smokeData3D = [];
-                        githubHistory.smoke.x.forEach((d, i) => {
-                            let t = d.getTime();
-                            if (t >= displayStart && t <= displayEnd) {
-                                smokeData3D.push([t, 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
-                            }
-                        });
-            
-                        let regData3D = [];
-                        githubHistory.reg.x.forEach((d, i) => {
-                            let t = d.getTime();
-                            if (t >= displayStart && t <= displayEnd) {
-                                regData3D.push([t, 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]);
-                            }
-                        });
-            
-                        let option = {
-                            tooltip: { backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } },
-                            grid3D: { boxWidth: 200, boxDepth: 80, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
-                            
-                            // 🔥 FIXED: type is back to 'time'
-                            xAxis3D: { 
-                                type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
-                                axisLabel: { formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); return `${d.getMonth()+1}-${d.getDate()}\n${hrs % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${hrs >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } 
-                            },
-                            yAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
-                            zAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
-                            series: [ { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } } ]
-                        }; eChartInstance.setOption(option);
+                let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                let gridColor = isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.4)';
+                let fontColor = isDark ? '#94a3b8' : '#334155';
+                
+                let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
+                let displayEnd = filterEndTime || new Date().getTime();
+    
+                let smokeData3D = [];
+                githubHistory.smoke.x.forEach((d, i) => {
+                    let t = d.getTime();
+                    if (t >= displayStart && t <= displayEnd) {
+                        smokeData3D.push([t, 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
                     }
+                });
+    
+                let regData3D = [];
+                githubHistory.reg.x.forEach((d, i) => {
+                    let t = d.getTime();
+                    if (t >= displayStart && t <= displayEnd) {
+                        regData3D.push([t, 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]);
+                    }
+                });
+    
+                let option = {
+                    tooltip: { backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } },
+                    grid3D: { boxWidth: 200, boxDepth: 80, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
+                    xAxis3D: { 
+                        type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
+                        axisLabel: { formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); return `${d.getMonth()+1}-${d.getDate()}\n${hrs % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${hrs >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } 
+                    },
+                    yAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
+                    zAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
+                    series: [ { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } } ]
+                }; eChartInstance.setOption(option);
+            }
 
             window.addEventListener('resize', () => { if(eChartInstance) eChartInstance.resize(); });
 
@@ -566,16 +699,22 @@
                     const [regRuns, smokeRuns] = await Promise.all([ fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2), fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?status=completed`, 4) ]);
                     if(smokeRuns && smokeRuns.length > 0) { smokeRuns.reverse().forEach(run => { githubHistory.smoke.x.push(new Date(run.updated_at)); githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.smoke.url.push(run.html_url); }); }
                     if(regRuns && regRuns.length > 0) { regRuns.reverse().forEach(run => { githubHistory.reg.x.push(new Date(run.updated_at)); githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.reg.url.push(run.html_url); }); }
-                    window.renderChart();
-                } catch(e) { window.renderChart(); } // Renders blank correctly if fails
+                    
+                    if (currentChartMode === 'table') renderTable();
+                    else window.renderChart();
+                    
+                } catch(e) { 
+                    if (currentChartMode === 'table') renderTable();
+                    else window.renderChart(); 
+                } 
             }
             startHistoryFetch();
 
             function init3DBackground() {
                 if (typeof THREE === 'undefined' || window.innerWidth < 768) return; 
                 const canvas = document.getElementById('bg-canvas'); scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); 
-                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false }); // antialias false boosts performance
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped ratio for battery saving
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false }); 
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 100, 50, 25), new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 }));
                 planeMesh.rotation.x = -Math.PI / 2.5; planeMesh.position.y = -20; planeMesh.position.z = -40; scene.add(planeMesh);
@@ -585,7 +724,6 @@
             window.update3DBackgroundTheme = function(theme) { if(typeof planeMesh !== 'undefined') planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.08; };
             function animate3D() { requestAnimationFrame(animate3D); if(typeof planeMesh === 'undefined') return; const time = Date.now() * 0.0008; const position = planeMesh.geometry.attributes.position; for (let i = 0; i < position.count; i++) { const x = position.getX(i); const y = position.getY(i); position.setZ(i, Math.sin(x * 0.1 + time) * 4 + Math.cos(y * 0.1 + time) * 4); } position.needsUpdate = true; planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05; renderer.render(scene, camera); }
             
-            // Starts the 3D Engine
             init3DBackground();
         });
     </script>
