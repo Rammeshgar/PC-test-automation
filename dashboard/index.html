@@ -25,7 +25,7 @@
             --fail-color: #ef4444; 
             --inactive-color: #64748b;
             --accent-blue: #0ea5e9;
-            --accent-teal: #14b8a6; /* 🔥 NEW: FNX Color */
+            --accent-teal: #14b8a6; 
             
             --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); 
             --title-gradient: linear-gradient(90deg, #0284c7, #2563eb);
@@ -164,7 +164,7 @@
             min-height: 0; 
         }
 
-        /* Made the cards column wider and scrollable to fit 3 cards properly */
+        /* 🔥 FIX 2: Added padding-bottom: 90px so the last card doesn't hide behind the widget! */
         .cards-column { 
             flex: 0 0 380px; 
             display: flex; 
@@ -175,6 +175,7 @@
             z-index: 30; 
             overflow-y: auto; 
             padding-right: 5px; 
+            padding-bottom: 90px; 
         }
 
         .chart-section { 
@@ -700,7 +701,8 @@
                     </div>
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
-                    <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="reg-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
+                    <!-- 🔥 FIX 1: Changed reg-hb to regression-hb to solve the DATA ERROR bug! -->
+                    <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="regression-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
                     <span id="regression-status-text">Checking...</span>
                 </div>
                 <div class="meta">
@@ -801,7 +803,6 @@
         let currentChartMode = '2d'; 
         let eChartInstance = null; 
         
-        // Added FNX to history arrays
         let githubHistory = { 
             smoke: {x:[], z:[], url:[]}, 
             reg: {x:[], z:[], url:[]}, 
@@ -1122,7 +1123,7 @@
             // Load live data for all 3 cards
             loadLiveData('smoke', 'smoke', 120);
             loadLiveData('regression', 'regression', 180);
-            loadLiveData('fnx', 'fnx', 240); // 4 hour threshold since it runs every 2 hours
+            loadLiveData('fnx', 'fnx', 240); 
             
             document.getElementById('start-date').addEventListener('change', applyDateFilter);
             document.getElementById('end-date').addEventListener('change', applyDateFilter);
@@ -1254,18 +1255,19 @@
                             } 
                         } 
                     ],
+                    // 🔥 FIX 3: Reordered the Grid Index to perfectly match the sidebar! (Smoke = 0, Reg = 1, FNX = 2)
                     yAxis: [ 
-                        { type: 'value', gridIndex: 0, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'FNX AI', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#14b8a6', fontSize: 13, fontWeight: 'bold' } }, 
+                        { type: 'value', gridIndex: 0, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'Smoke', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#0ea5e9', fontSize: 13, fontWeight: 'bold' } }, 
                         { type: 'value', gridIndex: 1, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'Regression', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#8b5cf6', fontSize: 13, fontWeight: 'bold' } }, 
-                        { type: 'value', gridIndex: 2, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'Smoke', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#0ea5e9', fontSize: 13, fontWeight: 'bold' } } 
+                        { type: 'value', gridIndex: 2, min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, splitLine: { lineStyle: { color: gridColor } }, name: 'FNX AI', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#14b8a6', fontSize: 13, fontWeight: 'bold' } } 
                     ],
                     series: [ 
                         { 
-                            name: 'FNX AI & Parser', 
-                            type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: fnxData, step: 'end', symbol: 'circle', symbolSize: 10, 
-                            itemStyle: { color: '#14b8a6', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 }, 
-                            lineStyle: { width: 3, shadowColor: 'rgba(20, 184, 166, 0.5)', shadowBlur: 10 }, 
-                            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(20, 184, 166, 0.3)' }, { offset: 1, color: 'rgba(20, 184, 166, 0.0)' }]) } 
+                            name: 'Smoke Monitoring', 
+                            type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: smokeData, step: 'end', symbol: 'circle', symbolSize: 10, 
+                            itemStyle: { color: '#0ea5e9', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 }, 
+                            lineStyle: { width: 3, shadowColor: 'rgba(14, 165, 233, 0.5)', shadowBlur: 10 }, 
+                            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(14, 165, 233, 0.3)' }, { offset: 1, color: 'rgba(14, 165, 233, 0.0)' }]) } 
                         }, 
                         { 
                             name: 'Regression Test', 
@@ -1275,11 +1277,11 @@
                             areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(139, 92, 246, 0.3)' }, { offset: 1, color: 'rgba(139, 92, 246, 0.0)' }]) } 
                         }, 
                         { 
-                            name: 'Smoke Monitoring', 
-                            type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: smokeData, step: 'end', symbol: 'circle', symbolSize: 10, 
-                            itemStyle: { color: '#0ea5e9', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 }, 
-                            lineStyle: { width: 3, shadowColor: 'rgba(14, 165, 233, 0.5)', shadowBlur: 10 }, 
-                            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(14, 165, 233, 0.3)' }, { offset: 1, color: 'rgba(14, 165, 233, 0.0)' }]) } 
+                            name: 'FNX AI & Parser', 
+                            type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: fnxData, step: 'end', symbol: 'circle', symbolSize: 10, 
+                            itemStyle: { color: '#14b8a6', borderColor: isDark ? '#020617' : '#fff', borderWidth: 2 }, 
+                            lineStyle: { width: 3, shadowColor: 'rgba(20, 184, 166, 0.5)', shadowBlur: 10 }, 
+                            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(20, 184, 166, 0.3)' }, { offset: 1, color: 'rgba(20, 184, 166, 0.0)' }]) } 
                         } 
                     ]
                 });
@@ -1381,7 +1383,6 @@
                     const owner = hostname.split('.')[0]; 
                     const repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
                     
-                    // Added third fetch for FNX
                     const [regRuns, smokeRuns, fnxRuns] = await Promise.all([ 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2), 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?status=completed`, 4),
