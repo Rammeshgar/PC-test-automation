@@ -63,7 +63,7 @@ jobs:
           body: |
             The FNX File Parser & AI Chatbot test has failed.
             
-            📊 View Live Dashboard: https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/
+            📊 View Live Dashboard: https://rammeshgar.github.io/PC-test-automation/
             
             ⚙️ View GitHub Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             
