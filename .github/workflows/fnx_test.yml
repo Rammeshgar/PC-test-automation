@@ -1,0 +1,107 @@
+name: FNX AI & Parser Test
+
+on:
+  workflow_dispatch: # Allows manual trigger button
+  schedule:
+    # Runs every 2 hours at 15 minutes past the hour (e.g., 2:15, 4:15, 6:15)
+    - cron: '15 */2 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  run-fnx-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Browsers and Dependencies
+        run: playwright install chromium --with-deps
+
+      - name: Run FNX AI Test
+        id: test-step
+        continue-on-error: true # Crucial: Don't stop workflow if test fails
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: python test_fnx_ai.py
+
+      - name: Upload screenshots on failure
+        if: steps.test-step.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-fnx-screenshots
+          path: monitor_screenshots_fnx/
+
+      # Email Alert Logic (Only sends between 04:00 and 16:00 UTC)
+      - name: Get current time (UTC)
+        if: steps.test-step.outcome == 'failure'
+        id: time_check
+        run: echo "hour=$(date -u +'%H')" >> $GITHUB_OUTPUT
+
+      - name: Send email with screenshots on failure
+        if: steps.test-step.outcome == 'failure' && steps.time_check.outputs.hour >= 4 && steps.time_check.outputs.hour <= 16
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER_ADDRESS }}
+          server_port: ${{ secrets.MAIL_SERVER_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: '❌ FAILED: FNX AI & Parser Test'
+          body: |
+            The FNX File Parser & AI Chatbot test has failed.
+            Repository: ${{ github.repository }}
+            See the full logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Screenshots are attached.
+          to: ${{ secrets.MAIL_RECIPIENT_ADDRESS }}
+          from: GitHub Actions <${{ secrets.MAIL_SENDER_ADDRESS }}>
+          attachments: monitor_screenshots_fnx/*.png
+
+      # --- DASHBOARD SYNC FOR FNX TEST ---
+      - name: Generate Dashboard Data & Prepare Website
+        if: always() 
+        run: |
+          STATUS="${{ steps.test-step.outcome }}"
+          TIMESTAMP=$(date -u -Iseconds)
+          
+          # Format screenshots as JSON array
+          SCREENSHOTS="[]"
+          if [ -d "monitor_screenshots_fnx" ]; then
+            SCREENSHOTS=$(ls monitor_screenshots_fnx/*.png 2>/dev/null | awk 'BEGIN { ORS = ""; print "[" } { print "\""$0"\"", "," } END { print "]" }' | sed 's/,]/]/')
+            if [ "$SCREENSHOTS" == "]" ]; then SCREENSHOTS="[]"; fi
+          fi
+
+          mkdir -p public_html
+          
+          # Create fnx-data.json
+          echo "{\"status\": \"$STATUS\", \"timestamp\": \"$TIMESTAMP\", \"screenshots\": $SCREENSHOTS}" > public_html/fnx-data.json
+
+          # Copy website files and screenshots
+          cp -r dashboard/* public_html/ 2>/dev/null || true
+          cp -r monitor_screenshots_fnx public_html/ 2>/dev/null || true
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public_html
+          publish_branch: gh-pages
+          keep_files: true # CRITICAL: Keeps Smoke and Regression data intact!
+
+      # MUST BE THE ABSOLUTE LAST STEP
+      - name: Check test outcome and fail job if necessary
+        if: steps.test-step.outcome == 'failure'
+        run: exit 1
