@@ -67,9 +67,12 @@ jobs:
           subject: '❌ FAILED: Hourly UI Regression Test'
           body: |
             The hourly UI Regression test has failed.
-            Repository: ${{ github.repository }}
-            See the full logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            Screenshots are attached.
+            
+            📊 View Live Dashboard: https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/
+            
+            ⚙️ View GitHub Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            Screenshots of the failure are attached to this email.
           to: ${{ secrets.MAIL_RECIPIENT_ADDRESS }}
           from: GitHub Actions <${{ secrets.MAIL_SENDER_ADDRESS }}>
           attachments: monitor_screenshots_regression/*.png
