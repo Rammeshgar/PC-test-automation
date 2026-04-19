@@ -41,7 +41,7 @@ def run_fnx_test():
     current_stage = "setup"
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=500) 
+        browser = p.chromium.launch(headless=True, slow_mo=500) 
         context = browser.new_context(viewport={"width": 1920, "height": 1080}, permissions=[])
         page = context.new_page()
         
