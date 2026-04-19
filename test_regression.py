@@ -135,12 +135,17 @@ def run_regression():
             cpr_part2.fill(cpr_last_four)
 
             first_name_input = page.get_by_placeholder("Enter First Name")
-            first_name_input.click()
+            # Playwright's .fill() handles the click automatically, no need to call .click() first
             first_name_input.fill(dynamic_first_name)
             
+            # Press Escape to close any Mantine autocomplete dropdowns or tooltips that pop up
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(300) # tiny pause to allow animation to close
+            
             family_name_input = page.get_by_placeholder("Enter Family Name")
-            family_name_input.click()
-            family_name_input.fill(dynamic_family_name)
+            # Use force=True to bypass overlapping elements if a Toast notification is in the way
+            family_name_input.fill(dynamic_family_name, force=True)
+            page.keyboard.press("Escape")
             
             page.keyboard.press("Tab")
             page.wait_for_timeout(1000)
