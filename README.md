@@ -11,7 +11,7 @@ A robust, fully automated E2E testing and monitoring infrastructure for the **Pe
 ## 📊 Live Monitoring Dashboard
 All test executions are continuously logged to a live, interactive 3D web dashboard built with ECharts and Three.js. 
 
-**👉 [View the Live Status Dashboard Here](https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/) 👈**
+**👉 [View the Live Status Dashboard Here](https://rammeshgar.github.io/PC-test-automation/) 👈**
 
 <img width="1906" height="972" alt="Screenshot 2026-04-20 192121" src="https://github.com/user-attachments/assets/38e755c6-f894-47bc-80f2-241b2c562b44" />
 <img width="1905" height="975" alt="Screenshot 2026-04-20 192257" src="https://github.com/user-attachments/assets/1a61c819-b945-4345-9776-a8126285b756" />
