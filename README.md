@@ -60,7 +60,7 @@ The suite is configured to prevent alert fatigue while ensuring critical failure
     *   The failure screenshots attached directly to the email.
 *   **Cooldown Logic:** The 10-Minute Smoke test implements a strict 1-hour cooldown cache for emails. If the platform goes down for 3 hours, the team will only receive 3 emails, not 18.
 
-![Email Alert Screenshot](<img width="1920" height="1080" alt="05_03_Start_Direct_Consultation_FAILED" src="https://github.com/user-attachments/assets/803143af-173a-46b1-9d5d-c3630a294501" />)
+<img width="1920" height="1080" alt="05_03_Start_Direct_Consultation_FAILED" src="https://github.com/user-attachments/assets/803143af-173a-46b1-9d5d-c3630a294501" />
 
 ---
 
