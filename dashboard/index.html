@@ -821,6 +821,7 @@
                 });
             }
 
+<<<<
             function renderMatrix3DECharts() {
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.2)' : 'rgba(14, 165, 233, 0.4)';
@@ -862,6 +863,79 @@
                     ]
                 }; eChartInstance.setOption(option);
             }
+====
+            function renderMatrix3DECharts() {
+                let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                
+                // Adjusted colors for better light mode visibility & defined hover pointer color
+                let gridColor = isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(15, 23, 42, 0.2)'; 
+                let wallColor = isDark ? 'rgba(14, 165, 233, 0.04)' : 'rgba(15, 23, 42, 0.05)';
+                let fontColor = isDark ? '#94a3b8' : '#334155';
+                let pointerColor = isDark ? '#0ea5e9' : '#0f172a'; // Bright blue for dark mode, dark slate for light mode
+                
+                let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
+                let displayEnd = filterEndTime || new Date().getTime();
+    
+                let smokeData3D = [];
+                githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]); });
+                smokeData3D.sort((a, b) => a[0] - b[0]); 
+
+                let regData3D = [];
+                githubHistory.reg.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]); });
+                regData3D.sort((a, b) => a[0] - b[0]); 
+
+                let fnxData3D = [];
+                githubHistory.fnx.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], githubHistory.fnx.url[i]]); });
+                fnxData3D.sort((a, b) => a[0] - b[0]); 
+    
+                let option = {
+                    tooltip: { 
+                        backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
+                        formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } 
+                    },
+                    grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
+                    
+                    xAxis3D: { 
+                        type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
+                        axisLabel: { formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); return `${d.getMonth()+1}-${d.getDate()}\n${hrs % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${hrs >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, 
+                        splitLine: { lineStyle: { color: gridColor } },
+                        splitArea: { show: true, areaStyle: { color: [wallColor, 'transparent'] } },
+                        axisPointer: { lineStyle: { color: pointerColor, width: 2 } }
+                    },
+                    
+                    yAxis3D: { 
+                        type: 'value', min: -0.2, max: 2.2, splitNumber: 2, 
+                        axisLabel: { 
+                            formatter: (val) => val === 2 ? 'FNX' : (val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : '')), 
+                            color: function (val) {
+                                if (val === 2) return '#14b8a6'; 
+                                if (val === 1) return '#8b5cf6'; 
+                                if (val === 0) return '#0ea5e9'; 
+                                return fontColor; // Only falls back to standard text if none match
+                            }, 
+                            fontWeight: 'bold' 
+                        }, 
+                        splitLine: { lineStyle: { color: gridColor } },
+                        splitArea: { show: true, areaStyle: { color: ['transparent', wallColor] } },
+                        axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
+                    },
+                    
+                    zAxis3D: { 
+                        type: 'value', min: -0.2, max: 1.2, splitNumber: 1, 
+                        axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, 
+                        splitLine: { lineStyle: { color: gridColor } },
+                        splitArea: { show: true, areaStyle: { color: [wallColor, 'transparent'] } },
+                        axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
+                    },
+                    
+                    series: [ 
+                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, 
+                        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } },
+                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 12, symbol: 'triangle', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'FNX AI Test', type: 'line3D', data: fnxData3D, lineStyle: { width: 4, color: '#14b8a6' } } 
+                    ]
+                }; eChartInstance.setOption(option);
+            }
+>>>>
 
             window.addEventListener('resize', () => { if(eChartInstance) eChartInstance.resize(); });
 
