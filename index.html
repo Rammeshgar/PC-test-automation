@@ -256,7 +256,6 @@
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; max-width: 650px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;}
         
-        /* 🔥 UPGRADE: Sticky Float Close Button */
         .modal-close { 
             position: sticky; float: right; top: 0px; 
             background: rgba(0,0,0,0.6); border: none; color: #fff; font-size: 1.5rem; 
@@ -275,7 +274,6 @@
         .historic-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; padding: 15px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
         .modal-images { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         
-        /* 🔥 UPGRADE: Image Hover Zoom */
         .modal-images a { display: block; overflow: hidden; border-radius: 10px; }
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
@@ -774,7 +772,6 @@
                     dataZoom: [ { type: 'slider', show: true, xAxisIndex: [0, 1, 2], bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, { type: 'inside', xAxisIndex: [0, 1, 2], startValue: displayStart, endValue: displayEnd } ],
                     grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
                     
-                    /* 🔥 FIX 1: Strict min/max date bounds enforced here */
                     xAxis: [ 
                         { type: 'time', gridIndex: 0, show: false, min: displayStart, max: displayEnd }, 
                         { type: 'time', gridIndex: 1, show: false, min: displayStart, max: displayEnd },
@@ -807,10 +804,15 @@
     
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]); });
+                smokeData3D.sort((a, b) => a[0] - b[0]); // 🔥 FIX: Sort points chronologically so Echarts draws lines properly left-to-right
+
                 let regData3D = [];
                 githubHistory.reg.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]); });
+                regData3D.sort((a, b) => a[0] - b[0]); // 🔥 FIX: Sort points chronologically
+
                 let fnxData3D = [];
                 githubHistory.fnx.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], githubHistory.fnx.url[i]]); });
+                fnxData3D.sort((a, b) => a[0] - b[0]); // 🔥 FIX: Sort points chronologically
     
                 let option = {
                     tooltip: { 
@@ -842,6 +844,13 @@
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/fnx_test.yml/runs?status=completed`, 2) 
                     ]);
                     
+                    // 🔥 FIX: Completely clear existing data arrays before refilling them to stop data duplication on the 5min interval refetch
+                    githubHistory = { 
+                        smoke: {x:[], z:[], url:[]}, 
+                        reg: {x:[], z:[], url:[]}, 
+                        fnx: {x:[], z:[], url:[]} 
+                    };
+
                     if(smokeRuns && smokeRuns.length > 0) { smokeRuns.reverse().forEach(run => { githubHistory.smoke.x.push(new Date(run.updated_at)); githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.smoke.url.push(run.html_url); }); }
                     if(regRuns && regRuns.length > 0) { regRuns.reverse().forEach(run => { githubHistory.reg.x.push(new Date(run.updated_at)); githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.reg.url.push(run.html_url); }); }
                     if(fnxRuns && fnxRuns.length > 0) { fnxRuns.reverse().forEach(run => { githubHistory.fnx.x.push(new Date(run.updated_at)); githubHistory.fnx.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.fnx.url.push(run.html_url); }); }
@@ -851,7 +860,6 @@
             }
             startHistoryFetch();
             
-            /* 🔥 UPGRADE: Silently fetch new test data every 5 minutes so the dashboard is always live! */
             setInterval(() => {
                 loadLiveData('smoke', 'smoke', 120);
                 loadLiveData('regression', 'regression', 180);
@@ -859,14 +867,12 @@
                 startHistoryFetch();
             }, 300000); 
 
-            /* 🔥 FIX 2: Close modal when clicking the dark background overlay */
             document.getElementById('history-modal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeModal();
                 }
             });
 
-            /* 🔥 FIX 3: Allow closing the modal by pressing the "Escape" key */
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && document.getElementById('history-modal').classList.contains('active')) {
                     closeModal();
