@@ -789,8 +789,15 @@
                             return html + `<div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click dot for Details</div>`; 
                         } 
                     },
-                    dataZoom: [ { type: 'slider', show: true, xAxisIndex: [0, 1, 2], bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, { type: 'inside', xAxisIndex: [0, 1, 2], startValue: displayStart, endValue: displayEnd } ],
-                    grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
+                    dataZoom: [ 
+                        { type: 'slider', show: true, xAxisIndex: [0, 1, 2], bottom: 5, height: 16, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, 
+                        { type: 'inside', xAxisIndex: [0, 1, 2], startValue: displayStart, endValue: displayEnd } 
+                    ],
+                    grid: [ 
+                        { top: '6%', height: '23%', left: '80px', right: '30px' }, 
+                        { top: '35%', height: '23%', left: '80px', right: '30px' }, 
+                        { top: '64%', height: '23%', left: '80px', right: '30px' } 
+                    ],                    grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
                     
                     xAxis: [ 
                         { type: 'time', gridIndex: 0, show: false, min: displayStart, max: displayEnd }, 
@@ -841,7 +848,12 @@
                     },
                     grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                     xAxis3D: { type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, axisLabel: { formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); return `${d.getMonth()+1}-${d.getDate()}\n${hrs % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${hrs >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, splitLine: { lineStyle: { color: gridColor } } },
-                    yAxis3D: { type: 'value', min: -0.2, max: 2.2, splitNumber: 2, axisLabel: { formatter: (val) => val === 2 ? 'FNX' : (val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : '')), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
+                    yAxis3D: { type: 'value', min: -0.2, max: 2.2, splitNumber: 2, axisLabel: { formatter: (val) => val === 2 ? 'FNX' : (val === 1 ? 'Regression' : (val === 0 ? 'Smoke' : '')), color: function (val) {
+                                if (val === 2) return '#14b8a6'; 
+                                if (val === 1) return '#8b5cf6'; 
+                                if (val === 0) return '#0ea5e9'; 
+                                return fontColor;
+                            },  color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                     zAxis3D: { type: 'value', min: -0.2, max: 1.2, splitNumber: 1, axisLabel: { formatter: (val) => val === 1 ? 'PASS' : (val === 0 ? 'FAIL' : ''), color: fontColor, fontWeight: 'bold' }, axisPointer: { label: { show: false } }, splitLine: { lineStyle: { color: gridColor } } },
                     series: [ 
                         { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, 
