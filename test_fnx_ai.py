@@ -167,21 +167,23 @@ def run_fnx_test():
             for index, turn in enumerate(chat_sequence, start=1):
                 print(f"\n   - Turn {index}: Sending prompt: '{turn['prompt']}'")
                 
-                expect(chat_input).to_be_editable(timeout=10000)
+                # 1. Wait dynamically for the input to become editable (Give it up to 45 seconds for the AI to finish previous tasks)
+                expect(chat_input).to_be_editable(timeout=45000) 
+                
                 chat_input.fill(turn['prompt'])
                 page.keyboard.press("Enter")
                 
                 # Verify the user's question actually appeared in the chat UI
                 expect(page.get_by_text(turn['prompt']).first).to_be_visible(timeout=10000)
                 
-                # Wait for the AI to process and stream the response
-                print("   - Waiting 12 seconds for AI to stream response...")
-                time.sleep(12) 
+                print(f"   - Waiting for AI to finish responding...")
+                
+                # REMOVED: time.sleep(12) 
+                # Why? Playwright will naturally wait on the NEXT loop iteration 
+                # when it checks `expect(chat_input).to_be_editable()` again.
                 
                 take_screenshot(page, current_stage, f"chat_turn_{index}_completed")
                 print(f"   - ✅ Turn {index} completed successfully.")
-
-            print(f"\n\n--- ✅ ✅ ✅ FNX PARSER & AI TEST PASSED ✅ ✅ ✅ ---")
 
         except Exception as e:
             print(f"\n--- ❌ ❌ ❌ TEST FAILED during stage: {current_stage} ❌ ❌ ❌ ---")
