@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
     
     <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
@@ -45,7 +45,7 @@
             --card-border: rgba(14, 165, 233, 0.3);
             
             --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-            --title-gradient: linear-gradient(90deg, #f0d769e1, #ebc025e1);
+            --title-gradient: linear-gradient(90deg, #927aff, #9572ff);
             --graph-bg: rgba(10, 15, 30, 0.4);
             
             --tt-bg: rgba(15, 23, 42, 0.9);
@@ -107,9 +107,11 @@
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
 
         h1 { 
+            font-family: 'Montserrat', sans-serif; /* Applies the new geometric font */
+            text-transform: uppercase; /* Forces ALL CAPS like the logo */
             font-size: clamp(1.2rem, 2vw, 2rem); 
-            font-weight: 900; 
-            letter-spacing: -0.5px; 
+            font-weight: 800; 
+            letter-spacing: 1px; /* Spaces it out slightly for that premium look */
             margin: 0; 
             flex-grow: 1; 
             text-align: center; 
@@ -174,7 +176,12 @@
             padding: 15px 20px; 
             box-shadow: var(--shadow); 
             position: relative; 
+            z-index: 1;
         }
+
+        .card:hover {
+            z-index: 100; /* Jumps this card to the very front when your mouse is over it! */
+        }        
 
         .card { 
             display: flex; 
@@ -846,10 +853,20 @@
 
             window.addEventListener('resize', () => { if(eChartInstance) eChartInstance.resize(); });
 
-            async function startHistoryFetch() {
+async function startHistoryFetch() {
                 try {
-                    const hostname = window.location.hostname; if (!hostname.includes('github.io')) throw new Error("Local");
-                    const owner = hostname.split('.')[0]; const repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
+                    const hostname = window.location.hostname; 
+                    
+                    // Allow local testing by falling back to your specific repo if not on github.io
+                    let owner = 'peoplesdoctor'; // Replace with your actual github owner name if needed
+                    let repo = 'clinic-monitoring'; // Replace with your actual repo name if needed
+                    
+                    if (hostname.includes('github.io')) {
+                        owner = hostname.split('.')[0]; 
+                        repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
+                    }
+
+                    console.log(`Fetching data from: ${owner}/${repo}...`);
                     
                     const [regRuns, smokeRuns, fnxRuns] = await Promise.all([ 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2), 
@@ -857,19 +874,27 @@
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/fnx_test.yml/runs?status=completed`, 2) 
                     ]);
                     
-                    // 🔥 FIX: Completely clear existing data arrays before refilling them to stop data duplication on the 5min interval refetch
-                    githubHistory = { 
-                        smoke: {x:[], z:[], url:[]}, 
-                        reg: {x:[], z:[], url:[]}, 
-                        fnx: {x:[], z:[], url:[]} 
-                    };
+                    // 🔥 FIX: ONLY clear the arrays if GitHub actually returned data!
+                    // This prevents wiping the screen blank if you hit the 60 req/hr API limit.
+                    if (smokeRuns.length > 0 || regRuns.length > 0 || fnxRuns.length > 0) {
+                        githubHistory = { 
+                            smoke: {x:[], z:[], url:[]}, 
+                            reg: {x:[], z:[], url:[]}, 
+                            fnx: {x:[], z:[], url:[]} 
+                        };
 
-                    if(smokeRuns && smokeRuns.length > 0) { smokeRuns.reverse().forEach(run => { githubHistory.smoke.x.push(new Date(run.updated_at)); githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.smoke.url.push(run.html_url); }); }
-                    if(regRuns && regRuns.length > 0) { regRuns.reverse().forEach(run => { githubHistory.reg.x.push(new Date(run.updated_at)); githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.reg.url.push(run.html_url); }); }
-                    if(fnxRuns && fnxRuns.length > 0) { fnxRuns.reverse().forEach(run => { githubHistory.fnx.x.push(new Date(run.updated_at)); githubHistory.fnx.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.fnx.url.push(run.html_url); }); }
+                        if(smokeRuns && smokeRuns.length > 0) { smokeRuns.reverse().forEach(run => { githubHistory.smoke.x.push(new Date(run.updated_at)); githubHistory.smoke.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.smoke.url.push(run.html_url); }); }
+                        if(regRuns && regRuns.length > 0) { regRuns.reverse().forEach(run => { githubHistory.reg.x.push(new Date(run.updated_at)); githubHistory.reg.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.reg.url.push(run.html_url); }); }
+                        if(fnxRuns && fnxRuns.length > 0) { fnxRuns.reverse().forEach(run => { githubHistory.fnx.x.push(new Date(run.updated_at)); githubHistory.fnx.z.push(run.conclusion === 'success' ? 1 : 0); githubHistory.fnx.url.push(run.html_url); }); }
+                    } else {
+                        console.warn("No data returned from GitHub. You may have hit the API rate limit (60 req/hr).");
+                    }
                     
                     if (currentChartMode === 'table') renderTable(); else window.renderChart();
-                } catch(e) { if (currentChartMode === 'table') renderTable(); else window.renderChart(); } 
+                } catch(e) { 
+                    console.error("Failed to fetch history:", e);
+                    if (currentChartMode === 'table') renderTable(); else window.renderChart(); 
+                } 
             }
             startHistoryFetch();
             
