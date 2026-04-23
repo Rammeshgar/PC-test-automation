@@ -25,10 +25,11 @@
             --fail-color: #ef4444; 
             --inactive-color: #64748b;
             --accent-blue: #0ea5e9;
+            --accent-purple: #a855f7;
             --accent-teal: #14b8a6; 
             
             --shadow: 0 15px 35px rgba(15, 30, 50, 0.1); 
-            --title-gradient: linear-gradient(90deg, #0284c7, #2563eb);
+            --title-gradient: linear-gradient(90deg, #042135c1, #011b30bf);
             --graph-bg: rgba(255, 255, 255, 0.1); 
             
             --tt-bg: rgba(255, 255, 255, 0.9);
@@ -44,7 +45,7 @@
             --card-border: rgba(14, 165, 233, 0.3);
             
             --shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-            --title-gradient: linear-gradient(90deg, #38bdf8, #818cf8);
+            --title-gradient: linear-gradient(90deg, #f0d769e1, #ebc025e1);
             --graph-bg: rgba(10, 15, 30, 0.4);
             
             --tt-bg: rgba(15, 23, 42, 0.9);
@@ -338,7 +339,10 @@
                 <div class="title-wrapper">
                     <div class="title-left">
                         <h2>💨 Smoke Monitoring</h2>
-                        <div class="info-icon">i<span class="tooltip">Verifies core infrastructure. Simulates a user logging in and out.</span></div>
+                        <div class="info-icon">i<span class="tooltip">
+    <strong>Core Infrastructure Sanity Check</strong><br><br>
+    A high-frequency monitor verifying system availability. Validates DNS, core asset loading, database connectivity, and ensures the authentication microservices successfully process login/logout cycles.
+</span></div>
                     </div>
                 </div>
                 <div id="smoke-status-badge" class="status-badge status-inactive">
@@ -356,8 +360,13 @@
             <div class="card" id="regression-card">
                 <div class="title-wrapper">
                     <div class="title-left">
-                        <h2>🔍 E2E Regression</h2>
-                        <div class="info-icon">i<span class="tooltip">Executes a full E2E clinical workflow: patient creation, direct consultation, and API WebM injection.</span></div>
+                        <h2 style="color: var(--accent-purple);">🔍 E2E Regression</h2>
+                        <div class="info-icon" style="background: var(--accent-purple);">i<span class="tooltip">
+    <strong>Comprehensive Clinical Pathway Check</strong><br><br>
+    • <strong>UI Layer:</strong> Validates new patient registration and launching a direct consultation.<br>
+    • <strong>Media/API:</strong> Injects a WebM payload to verify asynchronous processing and cloud storage.<br>
+    • <strong>State:</strong> Ensures seamless data sync between the backend API and front-end interface.
+</span></div>
                     </div>
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
@@ -376,7 +385,11 @@
                 <div class="title-wrapper">
                     <div class="title-left">
                         <h2 style="color: var(--accent-teal);">🧠 FNX AI & Parser</h2>
-                        <div class="info-icon" style="background: var(--accent-teal);">i<span class="tooltip" style="background: var(--accent-teal);">Uploads an FNX file, verifies auto-fill JSON parsing, and conducts a multi-turn conversation with the Medical LLM.</span></div>
+                        <div class="info-icon" style="background: var(--accent-teal);">i<span class="tooltip">
+    <strong>Diagnostic Pipeline & LLM Engine</strong><br><br>
+    • <strong>Parser:</strong> Uploads an .fnx file to verify accurate data extraction to structured JSON.<br>
+    • <strong>LLM:</strong> Conducts a multi-turn conversation with the Medical AI, asserting response latency, context retention, and clinical accuracy.
+</span></div>
                     </div>
                 </div>
                 <div id="fnx-status-badge" class="status-badge status-inactive">
@@ -881,14 +894,75 @@
 
             function init3DBackground() {
                 if (typeof THREE === 'undefined' || window.innerWidth < 768) return; 
-                const canvas = document.getElementById('bg-canvas'); scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); 
-                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false }); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); renderer.setSize(window.innerWidth, window.innerHeight);
-                planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 100, 50, 25), new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true, transparent: true, opacity: 0.15 }));
-                planeMesh.rotation.x = -Math.PI / 2.5; planeMesh.position.y = -20; planeMesh.position.z = -40; scene.add(planeMesh);
-                window.addEventListener('resize', () => { if (window.innerWidth >= 768) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } }); animate3D();
+                const canvas = document.getElementById('bg-canvas'); 
+                scene = new THREE.Scene(); 
+                
+                // 1. ADD FOG: Blends the grid smoothly into the background CSS color
+                let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                scene.fog = new THREE.FogExp2(isDark ? 0x020617 : 0xcddbe8, 0.012);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); 
+                
+                // 2. ENABLE ANTIALIAS: Smoothes out the jagged wireframe lines
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true }); 
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                
+                // Made the grid wider and increased opacity (Fog makes it safe to be brighter)
+                planeMesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(300, 150, 60, 30), 
+                    new THREE.MeshBasicMaterial({ 
+                        color: 0x0ea5e9, 
+                        wireframe: true, 
+                        transparent: true, 
+                        opacity: isDark ? 0.35 : 0.25 // Much more visible now!
+                    })
+                );
+                
+                planeMesh.rotation.x = -Math.PI / 2.2; 
+                planeMesh.position.y = -25; 
+                planeMesh.position.z = -30; 
+                scene.add(planeMesh);
+                
+                window.addEventListener('resize', () => { 
+                    if (window.innerWidth >= 768) { 
+                        camera.aspect = window.innerWidth / window.innerHeight; 
+                        camera.updateProjectionMatrix(); 
+                        renderer.setSize(window.innerWidth, window.innerHeight); 
+                    } 
+                }); 
+                animate3D();
             }
-            window.update3DBackgroundTheme = function(theme) { if(typeof planeMesh !== 'undefined') planeMesh.material.opacity = theme === 'dark' ? 0.15 : 0.08; };
-            function animate3D() { requestAnimationFrame(animate3D); if(typeof planeMesh === 'undefined') return; const time = Date.now() * 0.0008; const position = planeMesh.geometry.attributes.position; for (let i = 0; i < position.count; i++) { const x = position.getX(i); const y = position.getY(i); position.setZ(i, Math.sin(x * 0.1 + time) * 4 + Math.cos(y * 0.1 + time) * 4); } position.needsUpdate = true; planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05; renderer.render(scene, camera); }
+
+            window.update3DBackgroundTheme = function(theme) { 
+                if(typeof planeMesh !== 'undefined') {
+                    planeMesh.material.opacity = theme === 'dark' ? 0.35 : 0.25; 
+                    // Dynamically update the fog color when toggling Light/Dark mode
+                    if (scene.fog) scene.fog.color.setHex(theme === 'dark' ? 0x020617 : 0xcddbe8);
+                }
+            };
+
+            function animate3D() { 
+                requestAnimationFrame(animate3D); 
+                if(typeof planeMesh === 'undefined') return; 
+                
+                // 3. SLOWER MOTION: Multiplier reduced from 0.0008 to 0.0003 for a "breathing" effect
+                const time = Date.now() * 0.0003; 
+                const position = planeMesh.geometry.attributes.position; 
+                
+                for (let i = 0; i < position.count; i++) { 
+                    const x = position.getX(i); 
+                    const y = position.getY(i); 
+                    
+                    // 4. BROADER WAVES: Multiplier reduced to 0.05, height increased to 6
+                    position.setZ(i, Math.sin(x * 0.05 + time) * 6 + Math.cos(y * 0.05 + time) * 6); 
+                } 
+                position.needsUpdate = true; 
+                
+                // Removed the Z-axis rotation to keep it planted and grounded
+                renderer.render(scene, camera); 
+            }
+            
             init3DBackground();
         });
     </script>
