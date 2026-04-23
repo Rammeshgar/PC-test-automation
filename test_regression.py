@@ -118,37 +118,24 @@ def run_regression():
             full_patient_name = f"{dynamic_first_name} {dynamic_family_name}"
             
             # Generate Dynamic CPR (10 digits)
-            # Use Time (HHMMSS) for the first 6 digits to guarantee uniqueness every time the test runs.
             cpr_first_six = now.strftime('%H%M%S') 
-            cpr_last_four = now.strftime('%d%m')   # Use Day/Month for the last 4 digits
+            cpr_last_four = now.strftime('%d%m')
+            full_cpr = f"{cpr_first_six}{cpr_last_four}"
             
             print(f"   - Entering Patient Name: {full_patient_name}")
             print(f"   - Entering CPR: {cpr_first_six}-{cpr_last_four}")
             
-            # Fill the CPR using the specific UI placeholders
-            cpr_part1 = page.get_by_placeholder("123456").first
-            cpr_part1.click()
-            cpr_part1.fill(cpr_first_six)
-            
-            cpr_part2 = page.get_by_placeholder("****").first
-            cpr_part2.click()
-            cpr_part2.fill(cpr_last_four)
+            # UPDATED: Single CPR Input field
+            cpr_input = page.get_by_placeholder(re.compile(r"CPR-Number|CPR-nummer", re.IGNORECASE)).first
+            cpr_input.fill(full_cpr)
 
-            first_name_input = page.get_by_placeholder("Enter First Name")
-            # Playwright's .fill() handles the click automatically, no need to call .click() first
-            first_name_input.fill(dynamic_first_name)
+            # UPDATED: Single Patient Name Input field
+            name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientnavn", re.IGNORECASE)).first
+            name_input.fill(full_patient_name, force=True)
             
-            # Press Escape to close any Mantine autocomplete dropdowns or tooltips that pop up
+            # Press Escape to close any Mantine autocomplete dropdowns
             page.keyboard.press("Escape")
-            page.wait_for_timeout(300) # tiny pause to allow animation to close
-            
-            family_name_input = page.get_by_placeholder("Enter Family Name")
-            # Use force=True to bypass overlapping elements if a Toast notification is in the way
-            family_name_input.fill(dynamic_family_name, force=True)
-            page.keyboard.press("Escape")
-            
-            page.keyboard.press("Tab")
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(500)
             
             start_btn_regex = re.compile(r"Start (Consultation|Konsultation)", re.IGNORECASE)
             start_btn = page.get_by_role("button", name=start_btn_regex).last
@@ -163,11 +150,10 @@ def run_regression():
             
             print(f"   - SUCCESS: Consultation is LIVE with ID: {consultation_id}")
 
-# --- PHASE 4: Inject Full WebM via API ---
+            # --- PHASE 4: Inject Full WebM via API ---
             current_stage = "04_Inject_Audio"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # The developers moved the auth token to Cookies. Let's grab it directly!
             all_cookies = context.cookies()
             token = next((c['value'] for c in all_cookies if 'token' in c['name'].lower() or 'auth' in c['name'].lower() or 'pc-cookie' in c['name'].lower()), None)
             
@@ -176,41 +162,42 @@ def run_regression():
 
             print("   - ✅ Successfully extracted Auth Token from Cookies.")
 
-            # Format cookies for the API request header
             cookies_str = "; ".join([f"{c['name']}={c['value']}" for c in all_cookies])
             
-            # Inject the audio
             inject_webm_via_api(token, cookies_str, consultation_id)
             
             print("   - Waiting 5 seconds for backend to process the audio file...")
             time.sleep(5)
             take_screenshot(page, current_stage, "live_transcription_visible_before_finish")
 
-            # --- PHASE 5: Finish Consultation ---
+# --- PHASE 5: Finish Consultation ---
             current_stage = "05_Finish_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            finish_btn = page.get_by_role("button", name="Finish Consultation")
+            finish_btn = page.get_by_role("button", name=re.compile(r"Finish & Edit Note", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_click_finish_consultation")
             finish_btn.click()
             take_screenshot(page, current_stage, "after_click_finish_consultation")
             
-            expect(page.get_by_role("heading", name="Edit Consultation")).to_be_visible(timeout=60000)
+            # UPDATED: Use get_by_text instead of heading role, because the devs likely used a <div>
+            expect(page.get_by_text(re.compile(r"Edit and Save Note", re.IGNORECASE)).first).to_be_visible(timeout=60000)
 
-            # --- PHASE 6: Validate Transcription & Save ---
+# --- PHASE 6: Validate Transcription & Save ---
             current_stage = "06_Validate_and_Save"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            transcription_tab_btn = page.get_by_role('button', name='Transcription & AI Note')
-            take_screenshot(page, current_stage, "before_click_transcription_tab")
-            transcription_tab_btn.click()
-            take_screenshot(page, current_stage, "after_click_transcription_tab")
+            # UPDATED: The loading text changed in the new UI!
+            print("   - Waiting for 'Note is being generated...' loader to disappear...")
+            expect(page.get_by_text(re.compile(r"Note is being generated", re.IGNORECASE))).to_be_hidden(timeout=90000)
             
-            print("   - Waiting for 'AI is generating a new note...' loader to disappear...")
-            expect(page.get_by_text(re.compile(r"AI is generating a new note", re.IGNORECASE))).to_be_hidden(timeout=90000)
+            # Adding a tiny pause to allow the text to fully render in the DOM after the loader disappears
+            page.wait_for_timeout(1500) 
             
+            # Look for the editor content
             note_editor = page.locator('.rich-text-content, .ProseMirror, .mantine-TypographyStylesProvider-root').first
-            expect(note_editor).to_have_text(re.compile(r".+"), timeout=15000)
+            
+            # UPDATED: Looking specifically for alphanumeric characters rather than just any regex character
+            expect(note_editor).to_have_text(re.compile(r"[a-zA-Z]"), timeout=15000)
             
             note_text = note_editor.inner_text()
             print(f"   - Extracted AI Note Text (first 100 chars): {note_text[:100]}...")
@@ -220,23 +207,28 @@ def run_regression():
             else:
                 print("   - ✅ SUCCESS: Rich transcription content is present!")
             
-            approve_btn = page.get_by_role("button", name="Approve & Save Note")
+            approve_btn = page.get_by_role("button", name=re.compile(r"Approve & Save Note", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_click_approve_and_save")
             approve_btn.click()
             take_screenshot(page, current_stage, "after_click_approve_and_save")
 
-            # --- PHASE 7: Provide Feedback (Rating) ---
+# --- PHASE 7: Provide Feedback (Rating) ---
             current_stage = "07_Provide_Feedback"
             print(f"\n--- PHASE: {current_stage} ---")
-            feedback_modal = page.get_by_role("dialog", name="Provide Feedback")
-            expect(feedback_modal).to_be_visible(timeout=10000)
             
-            rating_star = feedback_modal.locator('button[aria-label*="Rate"], svg').nth(7)
-            take_screenshot(page, current_stage, "before_click_rating_star")
-            rating_star.click()
-            take_screenshot(page, current_stage, "after_click_rating_star")
+            # UPDATED: The modal is now titled "How accurate was the note?"
+            feedback_modal = page.get_by_role("dialog")
+            expect(feedback_modal.get_by_text(re.compile(r"How accurate was the note", re.IGNORECASE)).first).to_be_visible(timeout=10000)
             
-            submit_feedback_btn = feedback_modal.get_by_role("button", name="Submit")
+            # UPDATED: Rating is now 1-10 buttons. Let's select '10'.
+            # We use exact=True so it doesn't accidentally match other numbers.
+            rating_btn = feedback_modal.get_by_text("10", exact=True).first
+            take_screenshot(page, current_stage, "before_click_rating_10")
+            rating_btn.click()
+            take_screenshot(page, current_stage, "after_click_rating_10")
+            
+            # UPDATED: Submit button is now "SEND FEEDBACK"
+            submit_feedback_btn = feedback_modal.get_by_role("button", name=re.compile(r"SEND FEEDBACK", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_click_submit_feedback")
             submit_feedback_btn.click()
             take_screenshot(page, current_stage, "after_click_submit_feedback")
@@ -247,7 +239,7 @@ def run_regression():
             current_stage = "08_Verify_Dashboard"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            expect(page.locator("#start-now-button").or_(page.get_by_role("button", name="Start Consultation").first)).to_be_visible(timeout=20000)
+            expect(page.get_by_role("button", name=re.compile(r"Start Consultation", re.IGNORECASE)).first).to_be_visible(timeout=20000)
             time.sleep(3) 
             take_screenshot(page, current_stage, "dashboard_loaded_before_table_check")
             
