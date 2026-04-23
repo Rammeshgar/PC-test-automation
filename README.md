@@ -78,7 +78,7 @@ The suite is configured to prevent alert fatigue while ensuring critical failure
 <table align="center">
   <tr>
     <td align="center">
-      <img width="1920" height="1080" alt="Email Alert Screenshot" src="https://github.com/user-attachments/assets/803143af-173a-46b1-9d5d-c3630a294501" />
+      <img width="1431" height="822" alt="image" src="https://github.com/user-attachments/assets/fb0be250-1457-4d22-8d24-e6dc58ed4f4d" />
     </td>
     <td align="center">
       <img width="1899" height="976" alt="Failure Artifact Screenshot" src="https://github.com/user-attachments/assets/02f6b2c1-a00a-4fad-bb8b-53f12d0cdce1" />
