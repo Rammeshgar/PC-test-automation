@@ -63,7 +63,7 @@
             padding: 0; 
             height: 100vh; 
             width: 100vw; 
-            overflow: hidden; /* Force strict fit-to-screen */
+            overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             color: var(--text-main); 
@@ -134,12 +134,11 @@
             min-height: 0; 
         }
 
-        /* 🔥 FIX 1: The Magic Layout - No Scrolling, Perfect Fit */
         .cards-column { 
             flex: 0 0 340px; 
             display: flex; 
             flex-direction: column; 
-            gap: 12px; /* Gaps instead of margins */
+            gap: 12px; 
             height: 100%; 
             min-height: 0; 
             z-index: 30; 
@@ -171,12 +170,11 @@
             -webkit-backdrop-filter: blur(25px); 
             border: 1px solid var(--card-border); 
             border-radius: 20px; 
-            padding: 15px 20px; /* Tighter padding */
+            padding: 15px 20px; 
             box-shadow: var(--shadow); 
             position: relative; 
         }
 
-        /* 🔥 Cards automatically distribute height equally */
         .card { 
             display: flex; 
             flex-direction: column; 
@@ -233,7 +231,6 @@
         .screenshot { max-height: 90px; width: auto; object-fit: contain; cursor: pointer; }
         .no-failures { padding: 8px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: auto; border: 1px dashed var(--pass-color); font-size: 0.85rem;}
 
-        /* 🔥 FIX 2: Inline Status Widget. No more overlaps! */
         .global-status-widget { 
             background: var(--card-bg); 
             backdrop-filter: blur(20px); 
@@ -255,12 +252,21 @@
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; padding: 20px;}
         .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-content { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; max-width: 650px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;}
-        .modal-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-main); font-size: 2rem; cursor: pointer; font-weight: bold; line-height: 1;}
-        .modal-close:hover { color: var(--fail-color); }
-        .modal-header { margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px; }
+        .modal-content { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; max-width: 650px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;}
+        
+        /* 🔥 UPGRADE: Sticky Float Close Button */
+        .modal-close { 
+            position: sticky; float: right; top: 0px; 
+            background: rgba(0,0,0,0.6); border: none; color: #fff; font-size: 1.5rem; 
+            cursor: pointer; font-weight: bold; width: 35px; height: 35px; border-radius: 50%; 
+            z-index: 9999; display: flex; align-items: center; justify-content: center; 
+            backdrop-filter: blur(5px); transition: background 0.3s;
+        }
+        .modal-close:hover { background: var(--fail-color); }
+
+        .modal-header { margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px; margin-top: -15px;}
         .modal-header h2 { margin: 0 0 10px 0; color: var(--accent-blue); font-size: 1.5rem; }
         .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 0.95rem; }
         .modal-val { font-weight: 700; color: var(--text-main); }
@@ -268,9 +274,12 @@
         .github-btn:hover { background: #2c974b; }
         .historic-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; padding: 15px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
         .modal-images { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); }
+        
+        /* 🔥 UPGRADE: Image Hover Zoom */
+        .modal-images a { display: block; overflow: hidden; border-radius: 10px; }
+        .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
 
-        /* 🔥 FIX 3: Fully Ratio-Responsive Mobile Design */
         @media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; overflow-x: hidden; }
             #bg-canvas { display: none !important; }
@@ -291,7 +300,6 @@
             .chart-btn { border-left: none; border-top: 1px solid var(--card-border); margin-top: 5px; padding: 10px; border-radius: 10px;}
             .chart-btn.active { border-top-color: transparent; }
             
-            /* Status widget sticks safely to bottom on mobile */
             .global-status-widget { 
                 position: fixed; 
                 bottom: 10px; 
@@ -766,12 +774,13 @@
                     dataZoom: [ { type: 'slider', show: true, xAxisIndex: [0, 1, 2], bottom: 10, height: 20, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, { type: 'inside', xAxisIndex: [0, 1, 2], startValue: displayStart, endValue: displayEnd } ],
                     grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
                     
-                    // 🔥 FIX 4: Enforced Strict Order Mapping (0=Smoke, 1=Regression, 2=FNX)
+                    /* 🔥 FIX 1: Strict min/max date bounds enforced here */
                     xAxis: [ 
-                        { type: 'time', gridIndex: 0, show: false }, 
-                        { type: 'time', gridIndex: 1, show: false },
+                        { type: 'time', gridIndex: 0, show: false, min: displayStart, max: displayEnd }, 
+                        { type: 'time', gridIndex: 1, show: false, min: displayStart, max: displayEnd },
                         { 
-                            type: 'time', gridIndex: 2, splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } }, 
+                            type: 'time', gridIndex: 2, min: displayStart, max: displayEnd, 
+                            splitLine: { show: true, lineStyle: { color: gridColor, type: 'dashed' } }, 
                             axisLabel: { hideOverlap: true, rotate: window.innerWidth < 768 ? 45 : 0, fontSize: window.innerWidth < 768 ? 10 : 12, formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); let ampm = hrs >= 12 ? 'PM' : 'AM'; hrs = hrs % 12 || 12; let mins = d.getMinutes().toString().padStart(2, '0'); return `${d.getMonth()+1}-${d.getDate()} ${hrs}:${mins} ${ampm}`; }, color: '#f59e0b', fontWeight: '600', padding: [5, 0, 0, 0] } 
                         } 
                     ],
@@ -841,6 +850,28 @@
                 } catch(e) { if (currentChartMode === 'table') renderTable(); else window.renderChart(); } 
             }
             startHistoryFetch();
+            
+            /* 🔥 UPGRADE: Silently fetch new test data every 5 minutes so the dashboard is always live! */
+            setInterval(() => {
+                loadLiveData('smoke', 'smoke', 120);
+                loadLiveData('regression', 'regression', 180);
+                loadLiveData('fnx', 'fnx', 240);
+                startHistoryFetch();
+            }, 300000); 
+
+            /* 🔥 FIX 2: Close modal when clicking the dark background overlay */
+            document.getElementById('history-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+
+            /* 🔥 FIX 3: Allow closing the modal by pressing the "Escape" key */
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && document.getElementById('history-modal').classList.contains('active')) {
+                    closeModal();
+                }
+            });
 
             function init3DBackground() {
                 if (typeof THREE === 'undefined' || window.innerWidth < 768) return; 
