@@ -67,8 +67,8 @@ def run_smoke_test():
             expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=20000)
             page.wait_for_timeout(2000) 
             
-            # ✅ THE FIX: Look for EITHER English "Recent Activity" OR Danish "Seneste Aktivitet"
-            expect(page.get_by_text(re.compile(r"Recent Activity|Seneste Aktivitet", re.IGNORECASE)).first).to_be_visible(timeout=15000)
+            # UPDATED: Look for "Recent Consultations" based on the new UI
+            expect(page.get_by_text(re.compile(r"Recent Consultations|Seneste Konsultationer", re.IGNORECASE)).first).to_be_visible(timeout=15000)
             
             take_screenshot(page, current_stage, "login_successful_on_dashboard")
             print(f"   - SUCCESS: Logged in and Dashboard is fully visible.")
@@ -77,16 +77,11 @@ def run_smoke_test():
             current_stage = "02_Logout"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # 1. Click the top-right user profile menu
-            print("   - Opening top-right user menu...")
-            page.locator("header").locator("button").last.click(timeout=5000)
-            take_screenshot(page, current_stage, "user_menu_opened")
-
-            # 2. Click the Logout option inside the dropdown
-            print("   - Clicking Logout...")
-            # ✅ THE FIX: Look for EITHER English "Logout" OR Danish "Log ud"
-            logout_btn = page.get_by_text(re.compile(r"Log\s*out|Log\s*ud", re.IGNORECASE)).first
+            # UPDATED: Logout is now directly accessible in the bottom left sidebar menu
+            print("   - Clicking Logout in the sidebar...")
+            logout_btn = page.get_by_text(re.compile(r"Logout|Log ud", re.IGNORECASE)).first
             expect(logout_btn).to_be_visible(timeout=5000)
+            take_screenshot(page, current_stage, "before_logout_click")
             logout_btn.click()
 
             # Verify successful logout by checking we are back at the Sign In page
