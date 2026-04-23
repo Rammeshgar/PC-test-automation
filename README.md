@@ -13,9 +13,10 @@ All test executions are continuously logged to a live, interactive web dashboard
 
 **👉 [View the Live Status Dashboard Here](https://rammeshgar.github.io/PC-test-automation/) 👈**
 
-*   **Neon 2D & 3D WebGL Matrices:** Visualize test stability over time. Click on any data point to view execution details and screenshots from that exact run.
-*   **Execution Data Table:** Switch to the Data Table view to see a detailed history of all workflow runs.
-*   **Export Capabilities:** QA Leads and managers can instantly export historical execution logs to **CSV (Excel)**, **JSON**, or **Plain Text**.
+* 🔄 **Zero-Touch Auto-Refresh:** The dashboard automatically syncs with GitHub Actions every 5 minutes to fetch the latest test results, making it perfect for dedicated NOC (Network Operations Center) displays and QA wall monitors.
+*   **📈 Neon 2D & 3D WebGL Matrices:** Visualize test stability over time. Click on any data point to view execution details and screenshots from that exact run.
+*   **📄 Execution Data Table:** Switch to the Data Table view to see a detailed history of all workflow runs.
+*   **⬇️ Export Capabilities:** QA Leads and managers can instantly export historical execution logs to **CSV (Excel)**, **JSON**, or **Plain Text**.
 
 <table align="center">
   <tr>
