@@ -1,21 +1,35 @@
 # 🏥 Peoples Clinic Quality Assurance Suite
 
-[![10-Minute Smoke Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/smoke_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/smoke_test.yml)
-[![Hourly UI/API Regression Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/regression_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/regression_test.yml)
-[![FNX AI & Parser Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/fnx_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/fnx_test.yml)
+[![10-Minute Smoke Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/smoke_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/smoke_test.yml?v=1)
+[![Hourly UI/API Regression Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/regression_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/regression_test.yml?v=1)
+[![FNX AI & Parser Test](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/fnx_test.yml/badge.svg)](https://github.com/Rammeshgar/PC-test-automation/actions/workflows/fnx_test.yml?v=1)
 
 A robust, fully automated E2E testing and monitoring infrastructure for the **Peoples Clinic** platform. Built with **Playwright**, **Python**, and **GitHub Actions**, this suite continuously verifies core infrastructure, clinical workflows, and advanced LLM AI features.
 
 ---
 
 ## 📊 Live Monitoring Dashboard
-All test executions are continuously logged to a live, interactive 3D web dashboard built with ECharts and Three.js. 
+All test executions are continuously logged to a live, interactive web dashboard built with ECharts and Three.js. 
 
 **👉 [View the Live Status Dashboard Here](https://rammeshgar.github.io/PC-test-automation/) 👈**
 
-<img width="1906" height="972" alt="Screenshot 2026-04-20 192121" src="https://github.com/user-attachments/assets/38e755c6-f894-47bc-80f2-241b2c562b44" />
-<img width="1905" height="975" alt="Screenshot 2026-04-20 192257" src="https://github.com/user-attachments/assets/1a61c819-b945-4345-9776-a8126285b756" />
-<img width="1907" height="971" alt="Screenshot 2026-04-20 192322" src="https://github.com/user-attachments/assets/8f55b24a-7f7f-4ce1-b030-caae36c4c74e" />
+*   **Neon 2D & 3D WebGL Matrices:** Visualize test stability over time. Click on any data point to view execution details and screenshots from that exact run.
+*   **Execution Data Table:** Switch to the Data Table view to see a detailed history of all workflow runs.
+*   **Export Capabilities:** QA Leads and managers can instantly export historical execution logs to **CSV (Excel)**, **JSON**, or **Plain Text**.
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img width="600" alt="Dashboard 2D View" src="https://github.com/user-attachments/assets/38e755c6-f894-47bc-80f2-241b2c562b44" />
+    </td>
+    <td align="center">
+      <img width="600" alt="Dashboard 3D View" src="https://github.com/user-attachments/assets/1a61c819-b945-4345-9776-a8126285b756" />
+    </td>
+    <td align="center">
+      <img width="600" alt="Dashboard Data Table" src="https://github.com/user-attachments/assets/8f55b24a-7f7f-4ce1-b030-caae36c4c74e" />
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -60,7 +74,16 @@ The suite is configured to prevent alert fatigue while ensuring critical failure
     *   The failure screenshots attached directly to the email.
 *   **Cooldown Logic:** The 10-Minute Smoke test implements a strict 1-hour cooldown cache for emails. If the platform goes down for 3 hours, the team will only receive 3 emails, not 18.
 
-<img width="1920" height="1080" alt="05_03_Start_Direct_Consultation_FAILED" src="https://github.com/user-attachments/assets/803143af-173a-46b1-9d5d-c3630a294501" />
+<table align="center">
+  <tr>
+    <td align="center">
+      <img width="1920" height="1080" alt="Email Alert Screenshot" src="https://github.com/user-attachments/assets/803143af-173a-46b1-9d5d-c3630a294501" />
+    </td>
+    <td align="center">
+      <img width="1899" height="976" alt="Failure Artifact Screenshot" src="https://github.com/user-attachments/assets/02f6b2c1-a00a-4fad-bb8b-53f12d0cdce1" />
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -69,12 +92,13 @@ The suite is configured to prevent alert fatigue while ensuring critical failure
 ### 1. Requirements
 *   Python 3.11+
 *   Playwright
+*   Ensure `test-audio.webm` and the `test_data/` folder exist in your root directory.
 
 ### 2. Installation
 ```bash
 # Clone the repository
 git clone https://github.com/Rammeshgar/PC-test-automation.git
-cd YOUR_REPO_NAME
+cd PC-test-automation
 
 # Install dependencies
 pip install -r requirements.txt
@@ -84,8 +108,8 @@ playwright install chromium --with-deps
 ```
 
 ### 3. Environment Variables (.env)
-To run the tests locally, create a .env file in the root directory with the following credentials:
-```
+To run the tests locally, create a `.env` file in the root directory with the following credentials:
+```env
 # Smoke Test Credentials
 TEST_USERNAME=your_test_user@peoplesdoctor.ai
 TEST_PASSWORD=your_password
@@ -94,8 +118,9 @@ TEST_PASSWORD=your_password
 ADMIN_USERNAME=your_admin_user@peoplesdoctor.ai
 ADMIN_PASSWORD=your_admin_password
 ```
+
 ### 4. Running the Tests
-```
+```bash
 # Run the Smoke Test
 python smoke_test.py
 
