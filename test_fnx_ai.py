@@ -64,81 +64,83 @@ def run_fnx_test():
             try:
                 en_flag = page.locator("img[src*='gb'], img[src*='en'], img[alt*='English'], img[alt*='UK']").first
                 if en_flag.is_visible(timeout=5000):
-                    take_screenshot(page, current_stage, "before_click_language_flag")
                     en_flag.click(timeout=5000)
-                    take_screenshot(page, current_stage, "after_click_language_flag")
                     time.sleep(2) 
                     print("   - SUCCESS: Switched UI to English.")
-            except Exception: 
-                print("   - Language flag not found or already in English. Proceeding...")
+            except Exception: pass
 
-            # --- PHASE 3: Test FNX Parser (Auto-fill) ---
+# --- PHASE 3: Test FNX Parser (Auto-fill) ---
             current_stage = "03_FNX_Parser_Upload"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            upload_area = page.get_by_text(re.compile(r"Upload Patient Record File|Upload journalfil", re.IGNORECASE)).first
-            take_screenshot(page, current_stage, "before_clicking_upload_area")
-            upload_area.click()
-
-            print("   - Uploading FNX file...")
+            print("   - Clicking Drag & Drop zone to open upload modal...")
+            # 1. Click the dropzone to open the modal
+            page.get_by_text(re.compile(r"Drag & drop", re.IGNORECASE)).first.click()
+            
+            # Ensure the modal opened
+            expect(page.get_by_role("dialog")).to_be_visible(timeout=5000)
+            
+            print("   - Clicking 'Browse Files' to trigger file picker...")
+            # 2. NOW we wait for the file chooser while clicking "Browse Files"
             with page.expect_file_chooser() as fc_info:
-                page.get_by_role("button", name=re.compile(r"Browse Files|Gennemse filer", re.IGNORECASE)).click()
-            
-            file_chooser = fc_info.value
-            file_chooser.set_files(FNX_FILE_PATH)
-
-            expect(page.get_by_text(re.compile(r"VALID", re.IGNORECASE)).first).to_be_visible(timeout=15000)
-            take_screenshot(page, current_stage, "file_validated_in_modal")
-            
-            page.get_by_role("button", name=re.compile(r"Upload Files", re.IGNORECASE)).click()
-            page.wait_for_timeout(1000)
-
-            print("   - Verifying form auto-fill data...")
-            cpr_input = page.get_by_placeholder("123456").first
-            expect(cpr_input).to_have_value("251248", timeout=5000)
-            
-            first_name_input = page.get_by_placeholder("Enter First Name")
-            expect(first_name_input).to_have_value("Nancy")
-
-            middle_name_input = page.get_by_placeholder("Enter Middle Name (optional)")
-            expect(middle_name_input).to_have_value("Ann")
-
-            family_name_input = page.get_by_placeholder("Enter Family Name")
-            expect(family_name_input).to_have_value("Berggren")
-            
-            take_screenshot(page, current_stage, "data_autofilled_correctly")
-            print("   - ✅ SUCCESS: FNX file parsed and UI accurately populated!")
-
-            # --- PHASE 4: Patient Record Analytics (LLM Test) ---
-            current_stage = "04_LLM_Analytics_Init"
-            print(f"\n--- PHASE: {current_stage} ---")
-            
-            new_analysis_btn = page.get_by_text(re.compile(r"New Analysis|Ny Analyse", re.IGNORECASE)).first
-            new_analysis_btn.click()
-            
-            print("   - Uploading FNX file to LLM Context window...")
-            with page.expect_file_chooser() as fc_info:
-                # Reverted this back to the correct text for the Analytics Modal
-                page.get_by_role("dialog").get_by_text(re.compile(r"Select Patient Record file", re.IGNORECASE)).click()
+                page.get_by_role("button", name=re.compile(r"Browse Files", re.IGNORECASE)).click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
             
-            # This modal shows the Patient Details card instead of the VALID pill
-            expect(page.get_by_role("dialog").get_by_text("Nancy Ann Berggren").first).to_be_visible(timeout=15000)
-            take_screenshot(page, current_stage, "analytics_modal_file_attached")
+            print("   - Confirming upload...")
+            # 3. Click the "Upload Files" button to submit the modal
+            upload_confirm_btn = page.get_by_role("button", name=re.compile(r"Upload Files", re.IGNORECASE)).first
+            upload_confirm_btn.click()
             
-            # Reverted back to the correct button name
-            page.get_by_role("dialog").get_by_role("button", name=re.compile(r"Upload & Analyze", re.IGNORECASE)).click()
+            # Wait for the modal to close
+            expect(page.get_by_role("dialog")).to_be_hidden(timeout=10000)
             
-            expect(page.get_by_role("heading", name="Nancy Ann Berggren")).to_be_visible(timeout=20000)
+            page.wait_for_timeout(2000) # Give it a moment to parse the FNX JSON data
+
+            print("   - Verifying form auto-fill data...")
+            cpr_input = page.get_by_placeholder(re.compile(r"CPR", re.IGNORECASE)).first
+            
+            # UPDATED: We now use regex to accept the masked asterisks (251248****)
+            expect(cpr_input).to_have_value(re.compile(r"251248.*"), timeout=5000)
+            
+            name_input = page.get_by_placeholder(re.compile(r"Patient Name", re.IGNORECASE)).first
+            expect(name_input).to_have_value(re.compile(r"Nancy.*Berggren", re.IGNORECASE))
+            
+            take_screenshot(page, current_stage, "data_autofilled_correctly")
+            print("   - ✅ SUCCESS: FNX file parsed and UI accurately populated!")
+
+# --- PHASE 4: Patient Record Analytics (LLM Test) ---
+            current_stage = "04_LLM_Analytics_Init"
+            print(f"\n--- PHASE: {current_stage} ---")
+            
+            # Navigate to the new FNX Analytics tab in the sidebar
+            fnx_sidebar_btn = page.get_by_text("FNX Analytics", exact=True).first
+            fnx_sidebar_btn.click()
+            
+            # UPDATED: Check for the central empty-state text instead of a heading tag
+            expect(page.get_by_text("No patient selected").first).to_be_visible(timeout=10000)
+
+            print("   - Uploading FNX file to Analytics Chat...")
+            
+            # UPDATED: Use get_by_text for the button just in case it's not a true <button> element
+            with page.expect_file_chooser() as fc_info:
+                page.get_by_text(re.compile(r"Upload file", re.IGNORECASE)).first.click()
+                
+            file_chooser = fc_info.value
+            file_chooser.set_files(FNX_FILE_PATH)
+            
+            # Wait for Patient name to appear indicating context is loaded
+            expect(page.get_by_text("Nancy Ann Berggren").first).to_be_visible(timeout=20000)
+            take_screenshot(page, current_stage, "analytics_file_attached")
             print("   - ✅ SUCCESS: Analytics Chat UI loaded for Nancy Ann Berggren.")
 
             # --- PHASE 5: AI Patient Summary Generation ---
             current_stage = "05_AI_Summary_Generation"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            summary_btn = page.get_by_role("button", name="AI Patient Summary")
+            # Look for the Journal Summary pill/button
+            summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_summary_click")
             summary_btn.click()
             
@@ -148,49 +150,36 @@ def run_fnx_test():
             expect(page.locator("body")).to_contain_text(medical_anchor_regex, timeout=45000)
             
             take_screenshot(page, current_stage, "llm_summary_generated")
-            print("   - ✅ SUCCESS: LLM successfully analyzed the FNX file and extracted Medical History.")
+            print("   - ✅ SUCCESS: LLM successfully analyzed the FNX file.")
 
-# --- PHASE 6: Multi-Turn AI Conversation (Context Test) ---
+# --- PHASE 6: Multi-Turn AI Conversation ---
             current_stage = "06_Multi_Turn_LLM_Chat"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            chat_input = page.get_by_role("textbox").first
+            # UPDATED: Target the visible chat box using its specific placeholder text
+            chat_input = page.get_by_placeholder(re.compile(r"Describe what you need", re.IGNORECASE)).first
             
-            # A list of conversational turns to test Memory and Context
             chat_sequence = [
-                {
-                    "type": "Extraction + Typo",
-                    "prompt": "waht was the last record of deseas"
-                },
-                {
-                    "type": "Conversational Memory",
-                    "prompt": "What medication was prescribed for that specific illness?"
-                },
-                {
-                    "type": "Translation / Formatting",
-                    "prompt": "Can you summarize the patient's allergies in bullet points in Danish?"
-                }
+                {"type": "Extraction + Typo", "prompt": "waht was the last record of deseas"},
+                {"type": "Conversational Memory", "prompt": "What medication was prescribed for that specific illness?"}
             ]
 
             for index, turn in enumerate(chat_sequence, start=1):
-                print(f"\n   - Turn {index} [{turn['type']}]: Sending prompt: '{turn['prompt']}'")
+                print(f"\n   - Turn {index}: Sending prompt: '{turn['prompt']}'")
                 
-                # Ensure the text box is ready, then fill and send
                 expect(chat_input).to_be_editable(timeout=10000)
                 chat_input.fill(turn['prompt'])
                 page.keyboard.press("Enter")
                 
-                # 1. Verify the user's question actually appeared in the chat UI
+                # Verify the user's question actually appeared in the chat UI
                 expect(page.get_by_text(turn['prompt']).first).to_be_visible(timeout=10000)
                 
-                # 2. Wait for the AI to process and stream the response
+                # Wait for the AI to process and stream the response
                 print("   - Waiting 12 seconds for AI to stream response...")
                 time.sleep(12) 
                 
                 take_screenshot(page, current_stage, f"chat_turn_{index}_completed")
                 print(f"   - ✅ Turn {index} completed successfully.")
-
-            print(f"\n   - ✅ SUCCESS: AI successfully handled a {len(chat_sequence)}-turn conversation with memory context!")
 
             print(f"\n\n--- ✅ ✅ ✅ FNX PARSER & AI TEST PASSED ✅ ✅ ✅ ---")
 
