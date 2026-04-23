@@ -286,33 +286,35 @@
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
 
-        @media (max-width: 1000px) { 
+@media (max-width: 1000px) { 
             body { height: auto; overflow-y: auto; overflow-x: hidden; }
             #bg-canvas { display: none !important; }
-            .dashboard-layout { flex-direction: column; height: auto; padding: 10px; padding-bottom: 80px; display: block; }
-            .cards-column { height: auto; width: 100%; display: flex; flex-direction: column; margin-bottom: 15px; }
+            .dashboard-layout { flex-direction: column; height: auto; padding: 15px; display: block; }
+            .cards-column { height: auto; width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
             .card { flex: none; } 
-            .chart-section { height: auto; width: 100%; display: block; }
+            .chart-section { height: auto; width: 100%; display: flex; flex-direction: column; }
             .chart-container, .table-container { min-height: 500px; height: 500px; } 
         }
 
         @media (max-width: 768px) {
-            header { flex-direction: column; padding: 12px 10px; text-align: center; gap: 10px;}
-            .logo-container img { height: 30px; }
-            h1 { font-size: 1.3rem; margin: 0;}
+            header { flex-direction: column; padding: 15px 10px; text-align: center; gap: 12px;}
+            .logo-container img { height: 35px; }
+            
+            /* Improved text wrapping for the long title on mobile */
+            h1 { font-size: 1.15rem; margin: 0; line-height: 1.4; padding: 0 10px; }
+            
             .chart-toggles { flex-direction: column; align-items: stretch; padding: 10px; border-radius: 15px;}
             .date-picker { width: 100%; text-align: center; margin-bottom: 5px; padding: 10px;}
             .date-separator { display: none; } 
             .chart-btn { border-left: none; border-top: 1px solid var(--card-border); margin-top: 5px; padding: 10px; border-radius: 10px;}
             .chart-btn.active { border-top-color: transparent; }
             
+            /* Removed "position: fixed" so the widget sits neatly below the cards without overlapping text */
             .global-status-widget { 
-                position: fixed; 
-                bottom: 10px; 
-                left: 10px; 
-                right: 10px; 
-                z-index: 9999; 
-                margin-top: 0;
+                width: 100%;
+                margin-top: 5px;
+                padding: 15px;
+                border-radius: 20px;
             }
         }
     </style>
