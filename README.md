@@ -21,13 +21,13 @@ All test executions are continuously logged to a live, interactive web dashboard
 <table align="center">
   <tr>
     <td align="center">
-      <img width="600" alt="Dashboard 2D View" src="https://github.com/user-attachments/assets/38e755c6-f894-47bc-80f2-241b2c562b44" />
+      <img width="1910" height="977" alt="Screenshot 2026-04-23 162656" src="https://github.com/user-attachments/assets/bf7be5da-973e-4cb6-9265-e43e71f61c60" />
     </td>
     <td align="center">
-      <img width="600" alt="Dashboard 3D View" src="https://github.com/user-attachments/assets/1a61c819-b945-4345-9776-a8126285b756" />
+      <img width="1905" height="973" alt="Screenshot 2026-04-23 162555" src="https://github.com/user-attachments/assets/6dace373-8021-410f-a5eb-4418d58cb681" />
     </td>
     <td align="center">
-      <img width="600" alt="Dashboard Data Table" src="https://github.com/user-attachments/assets/8f55b24a-7f7f-4ce1-b030-caae36c4c74e" />
+      <img width="1907" height="972" alt="Screenshot 2026-04-23 162800" src="https://github.com/user-attachments/assets/6ac3b839-8708-4a2b-b75a-07359876b17f" />
     </td>
   </tr>
 </table>
@@ -82,6 +82,10 @@ The suite is configured to prevent alert fatigue while ensuring critical failure
     </td>
     <td align="center">
       <img width="1899" height="976" alt="Failure Artifact Screenshot" src="https://github.com/user-attachments/assets/02f6b2c1-a00a-4fad-bb8b-53f12d0cdce1" />
+    </td>
+    <td align="center">
+      <img width="817" height="350" alt="Screenshot 2026-04-23 163528" src="https://github.com/user-attachments/assets/af7bbfa5-5dce-45a5-b243-a158ac8e9ebc" />
+      <img width="814" height="477" alt="Screenshot 2026-04-23 163515" src="https://github.com/user-attachments/assets/0f770a0a-21f1-41d7-a442-9cf650f1cf40" />
     </td>
   </tr>
 </table>
