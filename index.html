@@ -286,6 +286,46 @@
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
 
+/* 3D Guide Overlay */
+        .guide-3d {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: none; /* Hidden by default */
+            gap: 15px;
+            z-index: 50;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            pointer-events: none; /* Allows mouse clicks to pass through to the chart */
+        }
+        
+        .guide-3d b { color: var(--text-main); font-weight: 700; }
+        
+        /* Class added by Javascript to make it fade in */
+        .guide-3d.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .guide-3d { 
+                bottom: 10px; right: 10px; left: 10px; 
+                justify-content: center; font-size: 0.75rem; gap: 10px;
+            }
+        }
+
 /* --- BULLETPROOF MOBILE LAYOUT --- */
         @media (max-width: 1000px) { 
             html, body { 
@@ -535,6 +575,14 @@
             
             <div class="chart-container" id="historyChart"></div>
             
+            <!-- ADD THIS NEW BLOCK -->
+            <div id="guide-3d" class="guide-3d">
+                <span>🖱️ <b>Right Click (Hold):</b> Rotate</span>
+                <span>🖐️ <b>Left Click (Hold):</b> Move</span>
+                <span>🔍 <b>Scroll:</b> Zoom</span>
+            </div>
+            <!-- END NEW BLOCK -->
+            
             <div class="table-container" id="tableContainer">
                 <div class="table-header-row">
                     <div style="font-weight: 700; color: var(--text-main); font-size: 1.1rem;">Detailed Execution Logs</div>
@@ -726,7 +774,15 @@
             
             const chartDiv = document.getElementById('historyChart');
             const tableDiv = document.getElementById('tableContainer');
+            const guide3D = document.getElementById('guide-3d'); // <-- Add this
             
+            // Toggle 3D Guide Visibility
+            if (mode === '3d') {
+                guide3D.classList.add('active');
+            } else {
+                guide3D.classList.remove('active');
+            }
+
             if (mode === 'table') {
                 chartDiv.style.display = 'none';
                 tableDiv.style.display = 'flex';
