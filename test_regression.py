@@ -74,8 +74,21 @@ def run_regression():
     current_stage = "setup"
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, slow_mo=500) 
-        context = browser.new_context(viewport={"width": 1920, "height": 1080}, permissions=[])
+        # 1. Add Chromium arguments to inject a fake video and audio stream
+        browser = p.chromium.launch(
+            headless=True, 
+            slow_mo=500,
+            args=[
+                "--use-fake-ui-for-media-stream",    # Auto-accepts permission popups
+                "--use-fake-device-for-media-stream" # Provides a fake video/audio feed
+            ]
+        ) 
+        
+        # 2. Explicitly grant camera and microphone permissions to the context
+        context = browser.new_context(
+            viewport={"width": 1920, "height": 1080}, 
+            permissions=["camera", "microphone"]
+        )
         page = context.new_page()
         
         try:
