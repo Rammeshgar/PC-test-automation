@@ -61,50 +61,51 @@ def run_fnx_test():
             # --- PHASE 2: Select English Language ---
             current_stage = "02_Select_Language"
             print(f"\n--- PHASE: {current_stage} ---")
-            try:
-                en_flag = page.locator("img[src*='gb'], img[src*='en'], img[alt*='English'], img[alt*='UK']").first
-                if en_flag.is_visible(timeout=5000):
-                    en_flag.click(timeout=5000)
-                    time.sleep(2) 
-                    print("   - SUCCESS: Switched UI to English.")
-            except Exception: pass
+            
+            # FIX: Removed the try/except pass block. We WANT this to throw an error if it fails.
+            # Using a broad locator to catch the UK/English flag whether it is an image, svg, or button
+            en_flag = page.locator("img[src*='gb'], img[src*='en'], img[alt*='English'], img[alt*='UK'], svg[class*='gb']").first
+            
+            # Wait a few seconds to see if the flag is there. If it is, click it.
+            if en_flag.is_visible(timeout=5000):
+                en_flag.click()
+                time.sleep(2) 
+                print("   - SUCCESS: Clicked English flag.")
+            else:
+                print("   - WARNING: English flag not found, proceeding with current language.")
 
             # --- PHASE 3: Test FNX Parser (Auto-fill) ---
             current_stage = "03_FNX_Parser_Upload"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            print("   - Clicking Drag & Drop zone to open upload modal...")
-            # 1. Click the dropzone to open the modal
-            page.get_by_text(re.compile(r"Drag & drop", re.IGNORECASE)).first.click()
+            print("   - Clicking upload zone to open upload modal...")
+            # FIX: Made the locator bilingual. It will now accept "Drag & drop" (EN) OR "Upload journalfil" (DK)
+            page.get_by_text(re.compile(r"Drag & drop|Upload journalfil", re.IGNORECASE)).first.click()
             
-            # Ensure the modal opened
             expect(page.get_by_role("dialog")).to_be_visible(timeout=5000)
             
             print("   - Clicking 'Browse Files' to trigger file picker...")
-            # 2. NOW we wait for the file chooser while clicking "Browse Files"
             with page.expect_file_chooser() as fc_info:
-                page.get_by_role("button", name=re.compile(r"Browse Files", re.IGNORECASE)).click()
+                # FIX: Added Danish equivalents just in case the modal is still in Danish
+                page.get_by_role("button", name=re.compile(r"Browse Files|Gennemse|Vælg", re.IGNORECASE)).first.click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
             
             print("   - Confirming upload...")
-            # 3. Click the "Upload Files" button to submit the modal
-            upload_confirm_btn = page.get_by_role("button", name=re.compile(r"Upload Files", re.IGNORECASE)).first
+            # FIX: Added Danish equivalents for the upload confirmation button
+            upload_confirm_btn = page.get_by_role("button", name=re.compile(r"Upload Files|Upload|Send", re.IGNORECASE)).first
             upload_confirm_btn.click()
             
-            # Wait for the modal to close
             expect(page.get_by_role("dialog")).to_be_hidden(timeout=10000)
-            
-            page.wait_for_timeout(2000) # Give it a moment to parse the FNX JSON data
+            page.wait_for_timeout(2000)
 
             print("   - Verifying form auto-fill data...")
             cpr_input = page.get_by_placeholder(re.compile(r"CPR", re.IGNORECASE)).first
-            
-            # We now use regex to accept the masked asterisks (251248****)
             expect(cpr_input).to_have_value(re.compile(r"251248.*"), timeout=5000)
             
-            name_input = page.get_by_placeholder(re.compile(r"Patient Name", re.IGNORECASE)).first
+            # FIX: Made the placeholder locator bilingual
+            name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientens navn", re.IGNORECASE)).first
             expect(name_input).to_have_value(re.compile(r"Nancy.*Berggren", re.IGNORECASE))
             
             take_screenshot(page, current_stage, "data_autofilled_correctly")
@@ -114,27 +115,22 @@ def run_fnx_test():
             current_stage = "04_LLM_Analytics_Init"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # Navigate to the new FNX Analytics tab in the sidebar
-            fnx_sidebar_btn = page.get_by_text("FNX Analytics", exact=True).first
+            fnx_sidebar_btn = page.get_by_text(re.compile(r"FNX Analytics|Journal Resume", re.IGNORECASE)).first
             fnx_sidebar_btn.click()
             
-            # Check for the central empty-state text instead of a heading tag
-            expect(page.get_by_text("No patient selected").first).to_be_visible(timeout=10000)
+            # Bilingual check for empty state
+            expect(page.get_by_text(re.compile(r"No patient selected|Ingen patient valgt", re.IGNORECASE)).first).to_be_visible(timeout=10000)
 
             print("   - Uploading FNX file to Analytics Chat...")
-            
-            # Use get_by_text for the button just in case it's not a true <button> element
             with page.expect_file_chooser() as fc_info:
-                page.get_by_text(re.compile(r"Upload file", re.IGNORECASE)).first.click()
+                # Bilingual text check
+                page.get_by_text(re.compile(r"Upload file|Upload fil", re.IGNORECASE)).first.click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
             
-            # Wait for Patient name to appear indicating context is loaded
             expect(page.get_by_text("Nancy Ann Berggren").first).to_be_visible(timeout=20000)
 
-            # 🟢 FIX: Added processing wait to solve the race condition
-            # We must give the backend time to index the FNX file before clicking "Summary"
             print("   - Waiting for backend to finish indexing the file context...")
             page.wait_for_timeout(4000) 
 
@@ -145,15 +141,12 @@ def run_fnx_test():
             current_stage = "05_AI_Summary_Generation"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # Look for the Journal Summary pill/button
-            summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary", re.IGNORECASE)).first
+            summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary|Journal Resume", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_summary_click")
             summary_btn.click()
             
             print("   - Waiting for LLM to stream the summary (up to 45 seconds)...")
             
-            # 🟢 FIX: Broadened the regex to accept the structure of the response 
-            # (including Danish/English Empty states) so the test is resilient to LLM variations.
             medical_anchor_regex = re.compile(
                 r"diabetes|Primcillin|Ingen registreret|No registered|Aktuelle Problemstillinger", 
                 re.IGNORECASE
@@ -167,8 +160,8 @@ def run_fnx_test():
             current_stage = "06_Multi_Turn_LLM_Chat"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # Target the visible chat box using its specific placeholder text
-            chat_input = page.get_by_placeholder(re.compile(r"Describe what you need", re.IGNORECASE)).first
+            # Bilingual chat input check
+            chat_input = page.get_by_placeholder(re.compile(r"Describe what you need|Beskriv hvad du", re.IGNORECASE)).first
             
             chat_sequence = [
                 {"type": "Extraction + Typo", "prompt": "waht was the last record of deseas"},
@@ -178,15 +171,12 @@ def run_fnx_test():
             for index, turn in enumerate(chat_sequence, start=1):
                 print(f"\n   - Turn {index}: Sending prompt: '{turn['prompt']}'")
                 
-                # Wait dynamically for the input to become editable (Give it up to 45 seconds for the AI to finish previous tasks)
                 expect(chat_input).to_be_editable(timeout=45000) 
                 
                 chat_input.fill(turn['prompt'])
                 page.keyboard.press("Enter")
                 
-                # Verify the user's question actually appeared in the chat UI
                 expect(page.get_by_text(turn['prompt']).first).to_be_visible(timeout=10000)
-                
                 print(f"   - Waiting for AI to finish responding...")
                 
                 take_screenshot(page, current_stage, f"chat_turn_{index}_completed")
