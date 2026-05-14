@@ -111,20 +111,21 @@ def run_fnx_test():
             take_screenshot(page, current_stage, "data_autofilled_correctly")
             print("   - ✅ SUCCESS: FNX file parsed and UI accurately populated!")
 
-            # --- PHASE 4: Patient Record Analytics (LLM Test) ---
+# --- PHASE 4: Patient Record Analytics (LLM Test) ---
             current_stage = "04_LLM_Analytics_Init"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            fnx_sidebar_btn = page.get_by_text(re.compile(r"FNX Analytics|Journal Resume", re.IGNORECASE)).first
+            fnx_sidebar_btn = page.get_by_text(re.compile(r"FNX Analytics|Journal Resume|Journalresumé", re.IGNORECASE)).first
             fnx_sidebar_btn.click()
             
             # Bilingual check for empty state
             expect(page.get_by_text(re.compile(r"No patient selected|Ingen patient valgt", re.IGNORECASE)).first).to_be_visible(timeout=10000)
 
             print("   - Uploading FNX file to Analytics Chat...")
+            
+            # 🟢 FIX: Trigger the file chooser by clicking exactly what is on the screen ("Vælg Fil" or "gennemse")
             with page.expect_file_chooser() as fc_info:
-                # Bilingual text check
-                page.get_by_text(re.compile(r"Upload file|Upload fil", re.IGNORECASE)).first.click()
+                page.get_by_text(re.compile(r"Upload file|Upload fil|Vælg Fil|gennemse", re.IGNORECASE)).first.click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
@@ -136,6 +137,26 @@ def run_fnx_test():
 
             take_screenshot(page, current_stage, "analytics_file_attached")
             print("   - ✅ SUCCESS: Analytics Chat UI loaded for Nancy Ann Berggren.")
+
+            # --- PHASE 5: AI Patient Summary Generation ---
+            current_stage = "05_AI_Summary_Generation"
+            print(f"\n--- PHASE: {current_stage} ---")
+            
+            # 🟢 FIX: Added precise Danish spelling from your screenshot
+            summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary|Journal Resume|Journalresumé", re.IGNORECASE)).first
+            take_screenshot(page, current_stage, "before_summary_click")
+            summary_btn.click()
+            
+            print("   - Waiting for LLM to stream the summary (up to 45 seconds)...")
+            
+            medical_anchor_regex = re.compile(
+                r"diabetes|Primcillin|Ingen registreret|No registered|Aktuelle Problemstillinger", 
+                re.IGNORECASE
+            )
+            expect(page.locator("body")).to_contain_text(medical_anchor_regex, timeout=45000)
+            
+            take_screenshot(page, current_stage, "llm_summary_generated")
+            print("   - ✅ SUCCESS: LLM successfully analyzed the FNX file.")
 
             # --- PHASE 5: AI Patient Summary Generation ---
             current_stage = "05_AI_Summary_Generation"
