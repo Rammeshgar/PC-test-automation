@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peoples Clinic Status Monitoring</title>
-    <link rel="icon" type="image/webp" href="./favicon.webp">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -895,13 +895,13 @@ let option = {
     },
     grid3D: { 
         boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', 
-        /* Changed rotate to Left click, pan to Right click */
-        viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'right', rotateMouseButton: 'left' }, 
-        light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } 
-    },
-    grid3D: { 
-        boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', 
-        viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'middle', rotateMouseButton: 'right' }, 
+        viewControl: { 
+            alpha: 20, 
+            beta: 30, 
+            distance: 300, 
+            rotateMouseButton: 'left',  /* Forces left click to rotate */
+            panMouseButton: 'right'     /* Forces right click to pan/move */
+        }, 
         light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } 
     },
     
@@ -952,15 +952,14 @@ let option = {
     },
     
     series: [ 
-        /* Increased dot size to 30, shrunk line width to 1.5, added hover emphasis */
-        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 30, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, silent: true, lineStyle: { width: 1.5, color: '#0ea5e9', opacity: 0.6 } }, 
+        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, silent: true, lineStyle: { width: 2, color: '#0ea5e9', opacity: 0.6 } }, 
         
-        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 30, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Regression Line', type: 'line3D', data: regData3D, silent: true, lineStyle: { width: 1.5, color: '#8b5cf6', opacity: 0.6 } },
+        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'Regression Line', type: 'line3D', data: regData3D, silent: true, lineStyle: { width: 2, color: '#8b5cf6', opacity: 0.6 } },
         
-        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 30, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, silent: true, lineStyle: { width: 1.5, color: '#14b8a6', opacity: 0.6 } } 
+        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, silent: true, lineStyle: { width: 2, color: '#14b8a6', opacity: 0.6 } } 
     ]
 }; 
 eChartInstance.setOption(option);
