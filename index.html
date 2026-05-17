@@ -166,7 +166,6 @@
         }
     </style>
 
-    <!-- MS CLARITY - This will show an ERR_BLOCKED in console if you use an Adblocker. This is normal. -->
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -274,7 +273,7 @@
             <div class="title-wrapper">
                 <div class="title-left">
                     <h2>📊 Live Global Stability Matrix</h2>
-                    <div class="info-icon">i<span class="tooltip">View historical stability. Defaults to 24hrs. Click on any data dot to view detailed logs and screenshots!</span></div>
+                    <div class="info-icon">i<span class="tooltip">View historical stability. Defaults to 24hrs. Hover over any data dot to view detailed logs and open the GitHub link!</span></div>
                 </div>
                 <div class="chart-toggles">
                     <input type="date" id="start-date" class="date-picker" title="Start Date" />
@@ -289,7 +288,7 @@
             <div class="chart-container" id="historyChart"></div>
             
             <div id="guide-3d" class="guide-3d">
-                <span>🖱️ <b>Left Click:</b> Select Data</span>
+                <span>🖱️ <b>Hover:</b> View Logs Button</span>
                 <span>🖐️ <b>Right Click (Hold):</b> Rotate</span>
                 <span>📍 <b>Middle Click (Hold):</b> Move</span>
                 <span>🔍 <b>Scroll:</b> Zoom</span>
@@ -324,7 +323,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Modal remains in case you click screenshots -->
     <div id="history-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">×</button>
@@ -596,92 +595,45 @@
             document.getElementById('end-date').addEventListener('change', applyDateFilter);
 
             window.renderChart = function() {
-                // FIXED: Force chart to render even if one of the workflows is empty!
-                if ((githubHistory.smoke.x.length === 0 && githubHistory.reg.x.length === 0 && githubHistory.fnx.x.length === 0) || typeof echarts === 'undefined') return;
-                
+                if (typeof echarts === 'undefined') return;
                 const container = document.getElementById('historyChart');
                 
                 if (eChartInstance) { eChartInstance.dispose(); eChartInstance = null; } 
                 eChartInstance = echarts.init(container);
 
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
-
-                // BULLETPROOF "CLOSEST TIME MATCH" CLICK HANDLER
-                eChartInstance.on('click', function (params) {
-                    if (params.componentType !== 'series') return;
-
-                    let prefix, modalTitle, historyKey;
-                    if (params.seriesName.includes('Smoke')) { 
-                        prefix = 'smoke'; historyKey = 'smoke'; modalTitle = '💨 Smoke Monitoring'; 
-                    } else if (params.seriesName.includes('Regression')) { 
-                        prefix = 'regression'; historyKey = 'reg'; modalTitle = '🔍 Regression Monitoring'; 
-                    } else { 
-                        prefix = 'fnx'; historyKey = 'fnx'; modalTitle = '🧠 FNX AI & Parser'; 
-                    }
-
-                    // WebGL corrupts timestamps slightly. Find the closest real timestamp!
-                    let corruptedTs = params.value[0];
-                    let closestIndex = -1;
-                    let minDiff = Infinity;
-                    
-                    githubHistory[historyKey].x.forEach((realDate, index) => {
-                        let diff = Math.abs(realDate.getTime() - corruptedTs);
-                        if (diff < minDiff) {
-                            minDiff = diff;
-                            closestIndex = index;
-                        }
-                    });
-
-                    if (closestIndex === -1) return; // Should never happen
-
-                    // Get exact clean data from memory
-                    let exactTs = githubHistory[historyKey].x[closestIndex].getTime();
-                    let status = githubHistory[historyKey].z[closestIndex];
-                    let url = githubHistory[historyKey].url[closestIndex];
-                    
-                    document.getElementById('modal-title').innerText = modalTitle;
-                    document.getElementById('modal-status').innerText = status === 1 ? '✅ PASSING' : '❌ FAILED';
-                    document.getElementById('modal-status').style.color = status === 1 ? 'var(--pass-color)' : 'var(--fail-color)';
-                    document.getElementById('modal-time').innerText = new Date(exactTs).toLocaleString();
-                    document.getElementById('modal-github-link').href = url;
-
-                    let dynamic = document.getElementById('modal-dynamic-content'); dynamic.innerHTML = ''; 
-                    let latestData = latestRunData[prefix];
-                    let isLatest = latestData && latestData.timestamp && Math.abs(new Date(latestData.timestamp).getTime() - exactTs) < 7200000;
-
-                    if (isLatest && latestData.screenshots && latestData.screenshots.length > 0) {
-                        let html = `<div style="color:var(--text-main); font-weight:bold; margin-bottom:10px;">Execution Screenshots:</div><div class="modal-images">`;
-                        latestData.screenshots.forEach(imgUrl => { html += `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" alt="Screenshot"/></a>`; });
-                        dynamic.innerHTML = html + `</div>`;
-                    } else if (status === 0) {
-                        dynamic.innerHTML = `<div class="historic-warning"><strong>Historical Artifacts Zipped</strong><br><br>Screenshots are stored as a .zip file in GitHub Actions.<br><br>Click below to download.</div>`;
-                    } else {
-                        dynamic.innerHTML = `<div class="no-failures" style="margin-bottom:20px;">✅ Test completed successfully.</div>`;
-                    }
-                    document.getElementById('history-modal').classList.add('active');
-                });
             };
 
             function renderNeon2DECharts() {
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.2)'; let fontColor = isDark ? '#94a3b8' : '#334155';
                 
-                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i]]);
-                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i]]);
-                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i]]);
+                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
+                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i]]);
+                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i], githubHistory.fnx.url[i]]);
                 let displayStart = filterStartTime || (new Date().getTime() - 86400000); let displayEnd = filterEndTime || new Date().getTime();
 
                 eChartInstance.setOption({
                     tooltip: { 
-                        trigger: 'axis', backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, 
+                        trigger: 'axis', 
+                        enterable: true, // LETS YOU MOUSE INTO THE TOOLTIP TO CLICK THE LINK
+                        backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, 
                         textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, axisPointer: { type: 'line', lineStyle: { color: 'rgba(14, 165, 233, 0.5)', width: 2, type: 'dashed' } }, 
                         formatter: function(params) { 
                             let html = `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${new Date(params[0].value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'})}</div>`; 
                             params.forEach(p => { 
                                 let c = p.value[1] === 1 ? '#10b981' : '#ef4444'; 
-                                html += `<div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c};"></span><span style="font-weight:600; color:${p.color}">${p.seriesName}</span></div><span style="font-weight:700; color:${c};">${p.value[1] === 1 ? 'PASS' : 'FAIL'}</span></div>`; 
+                                let url = p.value[2] || '#';
+                                html += `<div style="display:flex; justify-content: space-between; gap:15px; margin-top:8px; align-items:center;">
+                                            <div style="display:flex; align-items:center; gap:8px;">
+                                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c};"></span>
+                                                <span style="font-weight:600; color:${p.color}">${p.seriesName}</span>
+                                            </div>
+                                            <span style="font-weight:700; color:${c}; margin-right: 10px;">${p.value[1] === 1 ? 'PASS' : 'FAIL'}</span>
+                                            <a href="${url}" target="_blank" style="background:${c}; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">Logs ↗</a>
+                                        </div>`; 
                             }); 
-                            return html + `<div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click dot for Details</div>`; 
+                            return html; 
                         } 
                     },
                     dataZoom: [ 
@@ -724,26 +676,49 @@
     
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i]]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], i]); 
                 });
                 smokeData3D.sort((a, b) => a[0] - b[0]); 
 
                 let regData3D = [];
                 githubHistory.reg.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i]]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], i]); 
                 });
                 regData3D.sort((a, b) => a[0] - b[0]); 
 
                 let fnxData3D = [];
                 githubHistory.fnx.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i]]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], i]); 
                 });
                 fnxData3D.sort((a, b) => a[0] - b[0]);
     
                 let option = {
                     tooltip: { 
-                        backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
-                        formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } 
+                        trigger: 'item',
+                        enterable: true, // LETS YOU MOUSE INTO THE TOOLTIP TO CLICK THE LINK
+                        backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, 
+                        textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
+                        formatter: function(params) { 
+                            let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); 
+                            let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; 
+                            
+                            // Lookup the exact URL from the saved index!
+                            let historyKey = params.seriesName.includes('Smoke') ? 'smoke' : (params.seriesName.includes('Regression') ? 'reg' : 'fnx');
+                            let originalIndex = params.value[3];
+                            let exactUrl = githubHistory[historyKey].url[originalIndex] || '#';
+
+                            return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div>
+                                    <div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px; margin-bottom: 15px;">
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span>
+                                            <span style="font-weight:600; color:${params.color}">${params.seriesName}</span>
+                                        </div>
+                                        <span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span>
+                                    </div>
+                                    <div style="border-top: 1px dashed var(--tt-border); padding-top: 12px; text-align: center;">
+                                        <a href="${exactUrl}" target="_blank" style="display:inline-block; background:${sColor}; color:#fff; padding:6px 12px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">↗ View Logs on GitHub</a>
+                                    </div>`; 
+                        } 
                     },
                     grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'middle', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                     
@@ -809,20 +784,12 @@
 
             async function startHistoryFetch() {
                 try {
-                    const hostname = window.location.hostname; 
-                    
-                    let owner = 'peoplesdoctor'; 
-                    let repo = 'clinic-monitoring'; 
-                    
-                    if (hostname.includes('github.io')) {
-                        owner = hostname.split('.')[0]; 
-                        repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
-                    }
+                    // HARDCODED TO NEVER FAIL ON GITHUB PAGES
+                    let owner = 'rammeshgar'; 
+                    let repo = 'PC-test-automation'; 
 
                     console.log(`Fetching data from: ${owner}/${repo}...`);
                     
-                    // IMPORTANT: If your github action workflow files are NOT named "regression_test.yml", "smoke_test.yml", etc...
-                    // You must change the names here to match your repository exactly, or the graph will be completely empty!
                     const [regRuns, smokeRuns, fnxRuns] = await Promise.all([ 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2), 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?status=completed`, 4),
