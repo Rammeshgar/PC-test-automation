@@ -53,103 +53,22 @@
             --tt-border: rgba(14, 165, 233, 0.3);
         }
 
-        * { 
-            box-sizing: border-box; 
-            transition: background-color 0.4s ease, border-color 0.4s ease; 
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            width: 100%; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            color: var(--text-main); 
-            background-color: var(--bg-color); 
-        }
-
-        #bg-canvas { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            z-index: -1; 
-            pointer-events: none; 
-        }
-
-        header { 
-            flex: 0 0 auto; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 15px; 
-            padding: 12px 30px; 
-            background: var(--card-bg); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            border-bottom: 1px solid var(--card-border); 
-            z-index: 50; 
-            box-shadow: var(--shadow); 
-            flex-wrap: wrap; 
-        }
-
-        .logo-container img { 
-            height: 35px; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); 
-            transition: transform 0.3s;
-        }
-
+        * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; width: 100%; overflow: hidden; display: flex; flex-direction: column; color: var(--text-main); background-color: var(--bg-color); }
+        #bg-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+        header { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 12px 30px; background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--card-border); z-index: 50; box-shadow: var(--shadow); flex-wrap: wrap; }
+        .logo-container img { height: 35px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transition: transform 0.3s; }
         .logo-container img:hover { transform: scale(1.05); }
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
-
-        h1 { 
-            font-family: 'Montserrat', sans-serif; 
-            text-transform: uppercase; 
-            font-size: clamp(1.2rem, 2vw, 2rem); 
-            font-weight: 800; 
-            letter-spacing: 1px; 
-            margin: 0; 
-            flex-grow: 1; 
-            text-align: center; 
-            background: var(--title-gradient); 
-            -webkit-background-clip: text; 
-            color: transparent; 
-            filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.3)); 
-        }
-
+        h1 { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: clamp(1.2rem, 2vw, 2rem); font-weight: 800; letter-spacing: 1px; margin: 0; flex-grow: 1; text-align: center; background: var(--title-gradient); -webkit-background-clip: text; color: transparent; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.3)); }
         .header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
         .theme-toggle, .music-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;}
         .theme-toggle:hover, .music-toggle:hover { background: var(--accent-blue); color: #fff; }
         .music-toggle.playing { background: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
-
-        .dashboard-layout { 
-            flex: 1 1 0; 
-            display: flex; 
-            gap: 20px; 
-            padding: 15px 20px; 
-            max-width: 1800px; 
-            margin: 0 auto; 
-            width: 100%; 
-            min-height: 0; 
-        }
-
-        .cards-column { 
-            flex: 0 0 340px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-            height: 100%; 
-            min-height: 0; 
-            z-index: 30; 
-        }
-
+        .dashboard-layout { flex: 1 1 0; display: flex; gap: 20px; padding: 15px 20px; max-width: 1800px; margin: 0 auto; width: 100%; min-height: 0; }
+        .cards-column { flex: 0 0 340px; display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; z-index: 30; }
         .chart-section { flex: 1 1 0; display: flex; flex-direction: column; height: 100%; min-height: 0; z-index: 20; }
         .chart-container, .table-container { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 16px; background: var(--graph-bg); border: 1px solid var(--card-border); margin-top: 12px; position: relative; overflow: hidden; }
-        
         .table-container { display: none; flex-direction: column; padding: 15px; overflow-y: auto; }
         .table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
         .export-controls { display: flex; gap: 8px; align-items: center; }
@@ -158,7 +77,6 @@
         .export-select:hover { border-color: var(--pass-color); }
         .export-btn { background: var(--pass-color); color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);}
         .export-btn:hover { background: #059669; }
-        
         .data-table-wrapper { overflow-y: auto; flex: 1 1 0; border-radius: 8px; border: 1px solid var(--card-border); background: var(--card-bg); }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
         .data-table th { position: sticky; top: 0; background: var(--bg-color); color: var(--accent-blue); padding: 10px 12px; font-weight: 700; border-bottom: 2px solid var(--card-border); z-index: 10;}
@@ -166,28 +84,13 @@
         .data-table tr:hover td { background: rgba(14, 165, 233, 0.05); }
         .pill-pass { display: inline-block; background: rgba(16, 185, 129, 0.15); color: var(--pass-color); padding: 3px 8px; border-radius: 20px; font-weight: 700; border: 1px solid var(--pass-color); font-size: 0.75rem;}
         .pill-fail { display: inline-block; background: rgba(239, 68, 68, 0.15); color: var(--fail-color); padding: 3px 8px; border-radius: 20px; font-weight: 700; border: 1px solid var(--fail-color); font-size: 0.75rem;}
-
-        .card, .chart-section { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); 
-            border: 1px solid var(--card-border); 
-            border-radius: 20px; 
-            padding: 15px 20px; 
-            box-shadow: var(--shadow); 
-            position: relative; 
-            z-index: 1;
-        }
-
+        .card, .chart-section { background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--card-border); border-radius: 20px; padding: 15px 20px; box-shadow: var(--shadow); position: relative; z-index: 1; }
         .card:hover { z-index: 100; }        
-
         .card { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
-
         .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; flex-wrap: wrap; gap: 8px;}
         .title-left { display: flex; align-items: center; gap: 8px; }
         .card h2 { margin: 0; font-size: 1.15rem; color: var(--accent-blue); font-weight: 800;}
         .chart-section h2 { color: var(--accent-blue); margin: 0; font-size: 1.35rem; font-weight: 800;}
-        
         .chart-toggles { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 25px; border: 1px solid var(--card-border); align-items: center; flex-wrap: wrap; justify-content: center;}
         [data-theme="dark"] .chart-toggles { background: rgba(255,255,255,0.05); }
         .date-picker { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 6px 10px; border-radius: 20px; font-family: inherit; font-size: 0.8rem; outline: none; cursor: pointer; font-weight: 600; width: 120px; }
@@ -197,25 +100,12 @@
         .chart-btn { background: transparent; border: none; color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: all 0.3s; border-left: 1px solid var(--card-border); }
         .chart-btn:hover { color: var(--text-main); }
         .chart-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); border-left-color: transparent;}
-
         .info-icon { display: flex; justify-content: center; align-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-blue); color: #fff; font-size: 12px; cursor: help; position: relative; font-weight: bold; flex-shrink: 0;}
-        
-        .tooltip { 
-            position: absolute; top: 140%; left: 50%; transform: translateX(-50%) translateY(10px); 
-            background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; 
-            font-size: 0.85rem; width: 260px; opacity: 0; visibility: hidden; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 9999; 
-            text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4; 
-        }
-        .tooltip::before { 
-            content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); 
-            border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; 
-        }
+        .tooltip { position: absolute; top: 140%; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--accent-blue); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; width: 260px; opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 9999; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.5); pointer-events: none; line-height: 1.4; }
+        .tooltip::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: transparent transparent var(--accent-blue) transparent; }
         .info-icon:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
-
         .status-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; padding: 6px 12px; border-radius: 12px; background: rgba(0,0,0,0.03); border: 1px solid transparent; }
         [data-theme="dark"] .status-badge { background: rgba(255,255,255,0.03); }
-
         .heartbeat-icon { width: 35px; height: 18px; overflow: visible; }
         .hb-path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 150; stroke-dashoffset: 150; }
         .status-passed { color: var(--pass-color); border-color: rgba(16, 185, 129, 0.3); text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);}
@@ -225,47 +115,19 @@
         .status-inactive { color: var(--inactive-color); }
         .status-inactive .hb-path { stroke: var(--inactive-color); stroke-dasharray: 0; stroke-dashoffset: 0; }
         @keyframes heartbeat { 0% { stroke-dashoffset: 150; } 100% { stroke-dashoffset: -150; } }
-
         .meta { margin-top: 5px; margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
-        
         .screenshot-container { margin-top: auto; border-radius: 10px; overflow: hidden; border: 2px solid var(--fail-color); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3); max-height: 90px; display: flex; align-items: center; justify-content: center; background: #000; flex-shrink: 1;}
         .screenshot { max-height: 90px; width: auto; object-fit: contain; cursor: pointer; }
         .no-failures { padding: 8px; text-align: center; color: var(--pass-color); font-weight: 600; background: rgba(16, 185, 129, 0.1); border-radius: 10px; margin-top: auto; border: 1px dashed var(--pass-color); font-size: 0.85rem;}
-
-        .global-status-widget { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            border: 1px solid var(--card-border); 
-            padding: 12px 20px; 
-            border-radius: 30px; 
-            box-shadow: var(--shadow); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            gap: 15px; 
-            font-weight: 600; 
-            font-size: 0.95rem; 
-            flex-shrink: 0; 
-        }
-
+        .global-status-widget { background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--card-border); padding: 12px 20px; border-radius: 30px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 15px; font-weight: 600; font-size: 0.95rem; flex-shrink: 0; }
         .status-led { width: 14px; height: 14px; border-radius: 50%; background: var(--inactive-color); transition: all 0.3s;}
         .led-pass { background: var(--pass-color); box-shadow: 0 0 12px var(--pass-color); }
         .led-fail { background: var(--fail-color); box-shadow: 0 0 12px var(--fail-color); }
-
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; padding: 20px;}
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 20px; padding: 30px; max-width: 650px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto;}
-        
-        .modal-close { 
-            position: sticky; float: right; top: 0px; 
-            background: rgba(0,0,0,0.6); border: none; color: #fff; font-size: 1.5rem; 
-            cursor: pointer; font-weight: bold; width: 35px; height: 35px; border-radius: 50%; 
-            z-index: 9999; display: flex; align-items: center; justify-content: center; 
-            backdrop-filter: blur(5px); transition: background 0.3s;
-        }
+        .modal-close { position: sticky; float: right; top: 0px; background: rgba(0,0,0,0.6); border: none; color: #fff; font-size: 1.5rem; cursor: pointer; font-weight: bold; width: 35px; height: 35px; border-radius: 50%; z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: background 0.3s; }
         .modal-close:hover { background: var(--fail-color); }
-
         .modal-header { margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px; margin-top: -15px;}
         .modal-header h2 { margin: 0 0 10px 0; color: var(--accent-blue); font-size: 1.5rem; }
         .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 0.95rem; }
@@ -274,27 +136,14 @@
         .github-btn:hover { background: #2c974b; }
         .historic-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; padding: 15px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
         .modal-images { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        
         .modal-images a { display: block; overflow: hidden; border-radius: 10px; }
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
-
-        .guide-3d {
-            position: absolute; bottom: 25px; right: 25px; background: var(--card-bg);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--card-border);
-            padding: 10px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--text-muted);
-            display: none; gap: 15px; z-index: 50; box-shadow: 0 10px 25px rgba(0,0,0,0.2); pointer-events: none;
-        }
-        
+        .guide-3d { position: absolute; bottom: 25px; right: 25px; background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--card-border); padding: 10px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--text-muted); display: none; gap: 15px; z-index: 50; box-shadow: 0 10px 25px rgba(0,0,0,0.2); pointer-events: none; }
         .guide-3d b { color: var(--text-main); font-weight: 700; }
         .guide-3d.active { display: flex; animation: fadeIn 0.3s ease-in-out; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media (max-width: 768px) {
-            .guide-3d { bottom: 10px; right: 10px; left: 10px; justify-content: center; font-size: 0.75rem; gap: 10px; }
-        }
-
+        @media (max-width: 768px) { .guide-3d { bottom: 10px; right: 10px; left: 10px; justify-content: center; font-size: 0.75rem; gap: 10px; } }
         @media (max-width: 1000px) { 
             html, body { height: auto !important; min-height: 100vh !important; overflow-y: auto !important; overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; }
             #bg-canvas { display: none !important; }
@@ -304,7 +153,6 @@
             .chart-container, .table-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 500px !important; height: 500px !important; box-sizing: border-box !important; } 
             .data-table-wrapper { overflow-x: auto !important; width: 100% !important; -webkit-overflow-scrolling: touch; }
         }
-
         @media (max-width: 768px) {
             header { flex-direction: column !important; padding: 15px 10px !important; text-align: center !important; gap: 12px !important; width: 100% !important; box-sizing: border-box !important; }
             .logo-container img { height: 35px !important; }
@@ -318,6 +166,7 @@
         }
     </style>
 
+    <!-- MS CLARITY - This will show an ERR_BLOCKED in console if you use an Adblocker. This is normal. -->
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -747,7 +596,9 @@
             document.getElementById('end-date').addEventListener('change', applyDateFilter);
 
             window.renderChart = function() {
-                if (githubHistory.smoke.x.length === 0 || typeof echarts === 'undefined') return;
+                // FIXED: Force chart to render even if one of the workflows is empty!
+                if ((githubHistory.smoke.x.length === 0 && githubHistory.reg.x.length === 0 && githubHistory.fnx.x.length === 0) || typeof echarts === 'undefined') return;
+                
                 const container = document.getElementById('historyChart');
                 
                 if (eChartInstance) { eChartInstance.dispose(); eChartInstance = null; } 
@@ -755,12 +606,11 @@
 
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
-                // BULLETPROOF INDEX LOOKUP TO FIX WEBGL MEMORY CORRUPTION
+                // BULLETPROOF "CLOSEST TIME MATCH" CLICK HANDLER
                 eChartInstance.on('click', function (params) {
                     if (params.componentType !== 'series') return;
 
                     let prefix, modalTitle, historyKey;
-                    
                     if (params.seriesName.includes('Smoke')) { 
                         prefix = 'smoke'; historyKey = 'smoke'; modalTitle = '💨 Smoke Monitoring'; 
                     } else if (params.seriesName.includes('Regression')) { 
@@ -769,14 +619,25 @@
                         prefix = 'fnx'; historyKey = 'fnx'; modalTitle = '🧠 FNX AI & Parser'; 
                     }
 
-                    // Get the secret original index we passed into the array
-                    let originalIndex = params.value[3];
-                    if (originalIndex === undefined || originalIndex === null) return;
+                    // WebGL corrupts timestamps slightly. Find the closest real timestamp!
+                    let corruptedTs = params.value[0];
+                    let closestIndex = -1;
+                    let minDiff = Infinity;
+                    
+                    githubHistory[historyKey].x.forEach((realDate, index) => {
+                        let diff = Math.abs(realDate.getTime() - corruptedTs);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestIndex = index;
+                        }
+                    });
 
-                    // Instantly lookup the EXACT uncorrupted data from memory
-                    let exactTs = githubHistory[historyKey].x[originalIndex].getTime();
-                    let status = githubHistory[historyKey].z[originalIndex];
-                    let url = githubHistory[historyKey].url[originalIndex];
+                    if (closestIndex === -1) return; // Should never happen
+
+                    // Get exact clean data from memory
+                    let exactTs = githubHistory[historyKey].x[closestIndex].getTime();
+                    let status = githubHistory[historyKey].z[closestIndex];
+                    let url = githubHistory[historyKey].url[closestIndex];
                     
                     document.getElementById('modal-title').innerText = modalTitle;
                     document.getElementById('modal-status').innerText = status === 1 ? '✅ PASSING' : '❌ FAILED';
@@ -805,9 +666,9 @@
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.2)'; let fontColor = isDark ? '#94a3b8' : '#334155';
                 
-                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i], i]);
-                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i], i]);
-                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i], githubHistory.fnx.url[i], i]);
+                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i]]);
+                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i]]);
+                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i]]);
                 let displayStart = filterStartTime || (new Date().getTime() - 86400000); let displayEnd = filterEndTime || new Date().getTime();
 
                 eChartInstance.setOption({
@@ -863,22 +724,19 @@
     
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], i]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i]]); 
                 });
                 smokeData3D.sort((a, b) => a[0] - b[0]); 
 
                 let regData3D = [];
                 githubHistory.reg.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], i]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i]]); 
                 });
                 regData3D.sort((a, b) => a[0] - b[0]); 
 
                 let fnxData3D = [];
                 githubHistory.fnx.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], i]); 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i]]); 
                 });
                 fnxData3D.sort((a, b) => a[0] - b[0]);
     
@@ -963,6 +821,8 @@
 
                     console.log(`Fetching data from: ${owner}/${repo}...`);
                     
+                    // IMPORTANT: If your github action workflow files are NOT named "regression_test.yml", "smoke_test.yml", etc...
+                    // You must change the names here to match your repository exactly, or the graph will be completely empty!
                     const [regRuns, smokeRuns, fnxRuns] = await Promise.all([ 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/regression_test.yml/runs?status=completed`, 2), 
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/smoke_test.yml/runs?status=completed`, 4),
