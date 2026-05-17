@@ -585,8 +585,8 @@
             
             <!-- ADD THIS NEW BLOCK -->
             <div id="guide-3d" class="guide-3d">
-                <span>🖱️ <b>Right Click (Hold):</b> Rotate</span>
-                <span>🖐️ <b>Left Click (Hold):</b> Move</span>
+                <span>🖱️ <b>Left Click (Hold):</b> Rotate</span>
+                <span>🖐️ <b>Right Click (Hold):</b> Move</span>
                 <span>🔍 <b>Scroll:</b> Zoom</span>
             </div>
             <!-- END NEW BLOCK -->
@@ -901,8 +901,13 @@
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
                 eChartInstance.on('click', function (params) {
-                    let urlIndex = currentChartMode === '2d' ? 2 : 3; let statusIndex = currentChartMode === '2d' ? 1 : 2;
-                    let ts = params.value[0]; let status = params.value[statusIndex]; let url = params.value[urlIndex];
+                    // Grab status based on 2D vs 3D value arrays
+                    let ts = params.value[0]; 
+                    let status = currentChartMode === '2d' ? params.value[1] : params.value[2]; 
+                    
+                    // Prevent WebGL from breaking the URL string in 3D
+                    let url = currentChartMode === '2d' ? params.value[2] : params.data.githubUrl; 
+                    
                     let prefix, modalTitle;
                     
                     if (params.seriesName.includes('Smoke')) { prefix = 'smoke'; modalTitle = '💨 Smoke Monitoring'; } 
@@ -999,23 +1004,32 @@
                 let displayEnd = filterEndTime || new Date().getTime();
     
                 let smokeData3D = [];
-                githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]); });
-                smokeData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.smoke.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        smokeData3D.push({ value: [d.getTime(), 0, githubHistory.smoke.z[i]], githubUrl: githubHistory.smoke.url[i] }); 
+                });
+                smokeData3D.sort((a, b) => a.value[0] - b.value[0]); 
 
                 let regData3D = [];
-                githubHistory.reg.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]); });
-                regData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.reg.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        regData3D.push({ value: [d.getTime(), 1, githubHistory.reg.z[i]], githubUrl: githubHistory.reg.url[i] }); 
+                });
+                regData3D.sort((a, b) => a.value[0] - b.value[0]); 
 
                 let fnxData3D = [];
-                githubHistory.fnx.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], githubHistory.fnx.url[i]]); });
-                fnxData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.fnx.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        fnxData3D.push({ value: [d.getTime(), 2, githubHistory.fnx.z[i]], githubUrl: githubHistory.fnx.url[i] }); 
+                });
+                fnxData3D.sort((a, b) => a.value[0] - b.value[0]);
     
                 let option = {
                     tooltip: { 
                         backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
                         formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } 
                     },
-                    grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'left', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
+                    grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'right', rotateMouseButton: 'left' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                     
                     xAxis3D: { 
                         type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
