@@ -439,7 +439,6 @@
             
             <div class="chart-container" id="historyChart"></div>
             
-            <!-- NEW UPDATED 3D CONTROLS GUIDE -->
             <div id="guide-3d" class="guide-3d">
                 <span>🖱️ <b>Left Click:</b> Select Data</span>
                 <span>🖐️ <b>Right Click (Hold):</b> Rotate</span>
@@ -756,13 +755,10 @@
 
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
-                // FIXED CLICK HANDLER: Prevents WebGL from breaking the string variables!
+                // BULLETPROOF INDEX LOOKUP TO FIX WEBGL MEMORY CORRUPTION
                 eChartInstance.on('click', function (params) {
                     if (params.componentType !== 'series') return;
 
-                    let ts = params.value[0]; 
-                    let status = currentChartMode === '2d' ? params.value[1] : params.value[2]; 
-                    
                     let prefix, modalTitle, historyKey;
                     
                     if (params.seriesName.includes('Smoke')) { 
@@ -772,22 +768,25 @@
                     } else { 
                         prefix = 'fnx'; historyKey = 'fnx'; modalTitle = '🧠 FNX AI & Parser'; 
                     }
-                    
-                    let url = currentChartMode === '2d' ? params.value[2] : '#';
-                    if (currentChartMode === '3d') {
-                        let dataIndex = githubHistory[historyKey].x.findIndex(d => d.getTime() === ts);
-                        url = dataIndex !== -1 ? githubHistory[historyKey].url[dataIndex] : '#';
-                    }
+
+                    // Get the secret original index we passed into the array
+                    let originalIndex = params.value[3];
+                    if (originalIndex === undefined || originalIndex === null) return;
+
+                    // Instantly lookup the EXACT uncorrupted data from memory
+                    let exactTs = githubHistory[historyKey].x[originalIndex].getTime();
+                    let status = githubHistory[historyKey].z[originalIndex];
+                    let url = githubHistory[historyKey].url[originalIndex];
                     
                     document.getElementById('modal-title').innerText = modalTitle;
                     document.getElementById('modal-status').innerText = status === 1 ? '✅ PASSING' : '❌ FAILED';
                     document.getElementById('modal-status').style.color = status === 1 ? 'var(--pass-color)' : 'var(--fail-color)';
-                    document.getElementById('modal-time').innerText = new Date(ts).toLocaleString();
+                    document.getElementById('modal-time').innerText = new Date(exactTs).toLocaleString();
                     document.getElementById('modal-github-link').href = url;
 
                     let dynamic = document.getElementById('modal-dynamic-content'); dynamic.innerHTML = ''; 
                     let latestData = latestRunData[prefix];
-                    let isLatest = latestData && latestData.timestamp && Math.abs(new Date(latestData.timestamp).getTime() - ts) < 7200000;
+                    let isLatest = latestData && latestData.timestamp && Math.abs(new Date(latestData.timestamp).getTime() - exactTs) < 7200000;
 
                     if (isLatest && latestData.screenshots && latestData.screenshots.length > 0) {
                         let html = `<div style="color:var(--text-main); font-weight:bold; margin-bottom:10px;">Execution Screenshots:</div><div class="modal-images">`;
@@ -806,9 +805,9 @@
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.2)'; let fontColor = isDark ? '#94a3b8' : '#334155';
                 
-                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i]]);
-                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i]]);
-                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i], githubHistory.fnx.url[i]]);
+                let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i], i]);
+                let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i], i]);
+                let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i], githubHistory.fnx.url[i], i]);
                 let displayStart = filterStartTime || (new Date().getTime() - 86400000); let displayEnd = filterEndTime || new Date().getTime();
 
                 eChartInstance.setOption({
@@ -865,21 +864,21 @@
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i]]); 
+                        smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], i]); 
                 });
                 smokeData3D.sort((a, b) => a[0] - b[0]); 
 
                 let regData3D = [];
                 githubHistory.reg.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        regData3D.push([d.getTime(), 1, githubHistory.reg.z[i]]); 
+                        regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], i]); 
                 });
                 regData3D.sort((a, b) => a[0] - b[0]); 
 
                 let fnxData3D = [];
                 githubHistory.fnx.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i]]); 
+                        fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], i]); 
                 });
                 fnxData3D.sort((a, b) => a[0] - b[0]);
     
@@ -888,7 +887,6 @@
                         backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
                         formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } 
                     },
-                    // UPDATED 3D CONTROLS: Middle click to pan, Right click to rotate. Left click is now 100% free to just "click" objects.
                     grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'middle', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                     
                     xAxis3D: { 
@@ -937,11 +935,13 @@
                         axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
                     },
                     
-                    // UPDATED SYMBOL SIZES TO 18 FOR EASIER CLICKING
                     series: [ 
-                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 18, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, 
-                        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 18, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } },
-                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 18, symbol: 'triangle', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'FNX AI Test', type: 'line3D', data: fnxData3D, lineStyle: { width: 4, color: '#14b8a6' } } 
+                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 18, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, 
+                        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, silent: true, lineStyle: { width: 4, color: '#0ea5e9' } }, 
+                        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 18, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, 
+                        { name: 'Regression Line', type: 'line3D', data: regData3D, silent: true, lineStyle: { width: 4, color: '#8b5cf6' } },
+                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 18, symbol: 'triangle', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, 
+                        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, silent: true, lineStyle: { width: 4, color: '#14b8a6' } } 
                     ]
                 }; eChartInstance.setOption(option);
             }
