@@ -107,11 +107,11 @@
         [data-theme="dark"] .logo-container img { filter: brightness(0) invert(1); }
 
         h1 { 
-            font-family: 'Montserrat', sans-serif; /* Applies the new geometric font */
-            text-transform: uppercase; /* Forces ALL CAPS like the logo */
+            font-family: 'Montserrat', sans-serif; 
+            text-transform: uppercase; 
             font-size: clamp(1.2rem, 2vw, 2rem); 
             font-weight: 800; 
-            letter-spacing: 1px; /* Spaces it out slightly for that premium look */
+            letter-spacing: 1px; 
             margin: 0; 
             flex-grow: 1; 
             text-align: center; 
@@ -179,16 +179,9 @@
             z-index: 1;
         }
 
-        .card:hover {
-            z-index: 100; /* Jumps this card to the very front when your mouse is over it! */
-        }        
+        .card:hover { z-index: 100; }        
 
-        .card { 
-            display: flex; 
-            flex-direction: column; 
-            flex: 1 1 0; 
-            min-height: 0; 
-        }
+        .card { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
 
         .title-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; flex-wrap: wrap; gap: 8px;}
         .title-left { display: flex; align-items: center; gap: 8px; }
@@ -286,173 +279,42 @@
         .modal-images img { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .modal-images img:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4); cursor: zoom-in; }
 
-/* 3D Guide Overlay */
         .guide-3d {
-            position: absolute;
-            bottom: 25px;
-            right: 25px;
-            background: var(--card-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--card-border);
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: none; /* Hidden by default */
-            gap: 15px;
-            z-index: 50;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            pointer-events: none; /* Allows mouse clicks to pass through to the chart */
+            position: absolute; bottom: 25px; right: 25px; background: var(--card-bg);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--card-border);
+            padding: 10px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--text-muted);
+            display: none; gap: 15px; z-index: 50; box-shadow: 0 10px 25px rgba(0,0,0,0.2); pointer-events: none;
         }
         
         .guide-3d b { color: var(--text-main); font-weight: 700; }
-        
-        /* Class added by Javascript to make it fade in */
-        .guide-3d.active {
-            display: flex;
-            animation: fadeIn 0.3s ease-in-out;
-        }
+        .guide-3d.active { display: flex; animation: fadeIn 0.3s ease-in-out; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 768px) {
-            .guide-3d { 
-                bottom: 10px; right: 10px; left: 10px; 
-                justify-content: center; font-size: 0.75rem; gap: 10px;
-            }
+            .guide-3d { bottom: 10px; right: 10px; left: 10px; justify-content: center; font-size: 0.75rem; gap: 10px; }
         }
 
-/* --- BULLETPROOF MOBILE LAYOUT --- */
         @media (max-width: 1000px) { 
-            html, body { 
-                height: auto !important; 
-                min-height: 100vh !important;
-                overflow-y: auto !important; 
-                overflow-x: hidden !important; 
-                width: 100% !important; 
-                max-width: 100vw !important;
-            }
+            html, body { height: auto !important; min-height: 100vh !important; overflow-y: auto !important; overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; }
             #bg-canvas { display: none !important; }
-            
-            .dashboard-layout { 
-                flex-direction: column !important; 
-                height: auto !important; 
-                /* IMPORTANT: 90px padding at the bottom creates the safe zone for the floating widget! */
-                padding: 10px 10px 90px 10px !important; 
-                display: flex !important; 
-                width: 100% !important;
-                max-width: 100vw !important;
-                box-sizing: border-box !important;
-                overflow-x: hidden !important; 
-            }
-            
-            .cards-column { 
-                height: auto !important; 
-                width: 100% !important; 
-                min-width: 0 !important; 
-                flex: none !important;
-                display: flex !important; 
-                flex-direction: column !important; 
-                gap: 15px !important; 
-                margin-bottom: 20px !important; 
-                box-sizing: border-box !important;
-            }
-            
-            .card, .chart-section { 
-                flex: none !important; 
-                width: 100% !important; 
-                min-width: 0 !important; 
-                max-width: 100% !important;
-                height: auto !important;
-                box-sizing: border-box !important;
-                display: flex !important;
-                flex-direction: column !important;
-            } 
-            
-            .chart-container, .table-container { 
-                width: 100% !important;
-                max-width: 100% !important;
-                min-width: 0 !important; 
-                min-height: 500px !important; 
-                height: 500px !important; 
-                box-sizing: border-box !important;
-            } 
-            
-            .data-table-wrapper {
-                overflow-x: auto !important;
-                width: 100% !important;
-                -webkit-overflow-scrolling: touch;
-            }
+            .dashboard-layout { flex-direction: column !important; height: auto !important; padding: 10px 10px 90px 10px !important; display: flex !important; width: 100% !important; max-width: 100vw !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+            .cards-column { height: auto !important; width: 100% !important; min-width: 0 !important; flex: none !important; display: flex !important; flex-direction: column !important; gap: 15px !important; margin-bottom: 20px !important; box-sizing: border-box !important; }
+            .card, .chart-section { flex: none !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; height: auto !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; } 
+            .chart-container, .table-container { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 500px !important; height: 500px !important; box-sizing: border-box !important; } 
+            .data-table-wrapper { overflow-x: auto !important; width: 100% !important; -webkit-overflow-scrolling: touch; }
         }
 
         @media (max-width: 768px) {
-            header { 
-                flex-direction: column !important; 
-                padding: 15px 10px !important; 
-                text-align: center !important; 
-                gap: 12px !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            
+            header { flex-direction: column !important; padding: 15px 10px !important; text-align: center !important; gap: 12px !important; width: 100% !important; box-sizing: border-box !important; }
             .logo-container img { height: 35px !important; }
-            
-            h1 { 
-                font-size: 1.2rem !important; 
-                margin: 0 !important; 
-                line-height: 1.4 !important; 
-                padding: 0 5px !important; 
-                white-space: normal !important; 
-            }
-            
-            .chart-toggles { 
-                flex-direction: column !important; 
-                align-items: stretch !important; 
-                padding: 10px !important; 
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            
-            .date-picker { 
-                width: 100% !important; 
-                text-align: center !important; 
-                margin-bottom: 5px !important; 
-                padding: 10px !important;
-                box-sizing: border-box !important;
-            }
-            
+            h1 { font-size: 1.2rem !important; margin: 0 !important; line-height: 1.4 !important; padding: 0 5px !important; white-space: normal !important; }
+            .chart-toggles { flex-direction: column !important; align-items: stretch !important; padding: 10px !important; width: 100% !important; box-sizing: border-box !important; }
+            .date-picker { width: 100% !important; text-align: center !important; margin-bottom: 5px !important; padding: 10px !important; box-sizing: border-box !important; }
             .date-separator { display: none !important; } 
-            
-            .chart-btn { 
-                border-left: none !important; 
-                border-top: 1px solid var(--card-border) !important; 
-                margin-top: 5px !important; 
-                padding: 10px !important; 
-                border-radius: 10px !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            
+            .chart-btn { border-left: none !important; border-top: 1px solid var(--card-border) !important; margin-top: 5px !important; padding: 10px !important; border-radius: 10px !important; width: 100% !important; box-sizing: border-box !important; }
             .chart-btn.active { border-top-color: transparent !important; }
-            
-            /* Restored floating widget with heavy drop-shadow so it looks like it hovers */
-            .global-status-widget { 
-                position: fixed !important; 
-                bottom: 15px !important; 
-                left: 15px !important; 
-                right: 15px !important;
-                width: auto !important; /* Auto allows left/right constraints to size it */
-                margin: 0 !important;
-                padding: 15px !important;
-                border-radius: 30px !important;
-                z-index: 99999 !important;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.7) !important;
-                border: 1px solid var(--card-border) !important;
-            }
+            .global-status-widget { position: fixed !important; bottom: 15px !important; left: 15px !important; right: 15px !important; width: auto !important; margin: 0 !important; padding: 15px !important; border-radius: 30px !important; z-index: 99999 !important; box-shadow: 0 10px 40px rgba(0,0,0,0.7) !important; border: 1px solid var(--card-border) !important; }
         }
     </style>
 
@@ -486,9 +348,7 @@
 
     <div class="dashboard-layout">
         
-        <!-- Cards Column -->
         <div class="cards-column">
-            <!-- 1. SMOKE CARD -->
             <div class="card" id="smoke-card">
                 <div class="title-wrapper">
                     <div class="title-left">
@@ -510,7 +370,6 @@
                 <div id="smoke-screenshots"></div>
             </div>
 
-            <!-- 2. REGRESSION CARD -->
             <div class="card" id="regression-card">
                 <div class="title-wrapper">
                     <div class="title-left">
@@ -534,7 +393,6 @@
                 <div id="regression-screenshots"></div>
             </div>
 
-            <!-- 3. FNX AI CARD -->
             <div class="card" id="fnx-card">
                 <div class="title-wrapper">
                     <div class="title-left">
@@ -557,14 +415,12 @@
                 <div id="fnx-screenshots"></div>
             </div>
 
-            <!-- Inline Status Widget -->
             <div class="global-status-widget">
                 <div class="status-led" id="global-led"></div>
                 <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
             </div>
         </div>
 
-        <!-- Chart Section -->
         <div class="chart-section">
             <div class="title-wrapper">
                 <div class="title-left">
@@ -583,13 +439,13 @@
             
             <div class="chart-container" id="historyChart"></div>
             
-            <!-- ADD THIS NEW BLOCK -->
+            <!-- NEW UPDATED 3D CONTROLS GUIDE -->
             <div id="guide-3d" class="guide-3d">
-                <span>🖱️ <b>Left Click (Hold):</b> Rotate</span>
-                <span>🖐️ <b>Right Click (Hold):</b> Move</span>
+                <span>🖱️ <b>Left Click:</b> Select Data</span>
+                <span>🖐️ <b>Right Click (Hold):</b> Rotate</span>
+                <span>📍 <b>Middle Click (Hold):</b> Move</span>
                 <span>🔍 <b>Scroll:</b> Zoom</span>
             </div>
-            <!-- END NEW BLOCK -->
             
             <div class="table-container" id="tableContainer">
                 <div class="table-header-row">
@@ -782,9 +638,8 @@
             
             const chartDiv = document.getElementById('historyChart');
             const tableDiv = document.getElementById('tableContainer');
-            const guide3D = document.getElementById('guide-3d'); // <-- Add this
+            const guide3D = document.getElementById('guide-3d'); 
             
-            // Toggle 3D Guide Visibility
             if (mode === '3d') {
                 guide3D.classList.add('active');
             } else {
@@ -884,6 +739,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const bgMusic = document.getElementById('25 12 2021');
             if(bgMusic) bgMusic.volume = 0.05; 
+            
             loadLiveData('smoke', 'smoke', 120);
             loadLiveData('regression', 'regression', 180);
             loadLiveData('fnx', 'fnx', 240); 
@@ -900,19 +756,28 @@
 
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
+                // FIXED CLICK HANDLER: Prevents WebGL from breaking the string variables!
                 eChartInstance.on('click', function (params) {
-                    // Grab status based on 2D vs 3D value arrays
+                    if (params.componentType !== 'series') return;
+
                     let ts = params.value[0]; 
                     let status = currentChartMode === '2d' ? params.value[1] : params.value[2]; 
                     
-                    // Prevent WebGL from breaking the URL string in 3D
-                    let url = currentChartMode === '2d' ? params.value[2] : params.data.githubUrl; 
+                    let prefix, modalTitle, historyKey;
                     
-                    let prefix, modalTitle;
+                    if (params.seriesName.includes('Smoke')) { 
+                        prefix = 'smoke'; historyKey = 'smoke'; modalTitle = '💨 Smoke Monitoring'; 
+                    } else if (params.seriesName.includes('Regression')) { 
+                        prefix = 'regression'; historyKey = 'reg'; modalTitle = '🔍 Regression Monitoring'; 
+                    } else { 
+                        prefix = 'fnx'; historyKey = 'fnx'; modalTitle = '🧠 FNX AI & Parser'; 
+                    }
                     
-                    if (params.seriesName.includes('Smoke')) { prefix = 'smoke'; modalTitle = '💨 Smoke Monitoring'; } 
-                    else if (params.seriesName.includes('Regression')) { prefix = 'regression'; modalTitle = '🔍 Regression Monitoring'; } 
-                    else { prefix = 'fnx'; modalTitle = '🧠 FNX AI & Parser'; }
+                    let url = currentChartMode === '2d' ? params.value[2] : '#';
+                    if (currentChartMode === '3d') {
+                        let dataIndex = githubHistory[historyKey].x.findIndex(d => d.getTime() === ts);
+                        url = dataIndex !== -1 ? githubHistory[historyKey].url[dataIndex] : '#';
+                    }
                     
                     document.getElementById('modal-title').innerText = modalTitle;
                     document.getElementById('modal-status').innerText = status === 1 ? '✅ PASSING' : '❌ FAILED';
@@ -963,11 +828,7 @@
                         { type: 'slider', show: true, xAxisIndex: [0, 1, 2], bottom: 5, height: 16, borderColor: gridColor, textStyle: { color: fontColor }, fillerColor: isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(14, 165, 233, 0.15)', startValue: displayStart, endValue: displayEnd }, 
                         { type: 'inside', xAxisIndex: [0, 1, 2], startValue: displayStart, endValue: displayEnd } 
                     ],
-                    grid: [ 
-                        { top: '6%', height: '23%', left: '80px', right: '30px' }, 
-                        { top: '35%', height: '23%', left: '80px', right: '30px' }, 
-                        { top: '64%', height: '23%', left: '80px', right: '30px' } 
-                    ],                    grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
+                    grid: [ { top: '8%', height: '24%', left: '80px', right: '30px' }, { top: '38%', height: '24%', left: '80px', right: '30px' }, { top: '68%', height: '24%', left: '80px', right: '30px' } ],
                     
                     xAxis: [ 
                         { type: 'time', gridIndex: 0, show: false, min: displayStart, max: displayEnd }, 
@@ -993,12 +854,10 @@
 
             function renderMatrix3DECharts() {
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                
-                // Adjusted colors for better light mode visibility & defined hover pointer color
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(15, 23, 42, 0.2)'; 
                 let wallColor = isDark ? 'rgba(14, 165, 233, 0.04)' : 'rgba(15, 23, 42, 0.05)';
                 let fontColor = isDark ? '#94a3b8' : '#334155';
-                let pointerColor = isDark ? '#0ea5e9' : '#0f172a'; // Bright blue for dark mode, dark slate for light mode
+                let pointerColor = isDark ? '#0ea5e9' : '#0f172a'; 
                 
                 let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
                 let displayEnd = filterEndTime || new Date().getTime();
@@ -1006,30 +865,31 @@
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        smokeData3D.push({ value: [d.getTime(), 0, githubHistory.smoke.z[i]], githubUrl: githubHistory.smoke.url[i] }); 
+                        smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i]]); 
                 });
-                smokeData3D.sort((a, b) => a.value[0] - b.value[0]); 
+                smokeData3D.sort((a, b) => a[0] - b[0]); 
 
                 let regData3D = [];
                 githubHistory.reg.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        regData3D.push({ value: [d.getTime(), 1, githubHistory.reg.z[i]], githubUrl: githubHistory.reg.url[i] }); 
+                        regData3D.push([d.getTime(), 1, githubHistory.reg.z[i]]); 
                 });
-                regData3D.sort((a, b) => a.value[0] - b.value[0]); 
+                regData3D.sort((a, b) => a[0] - b[0]); 
 
                 let fnxData3D = [];
                 githubHistory.fnx.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        fnxData3D.push({ value: [d.getTime(), 2, githubHistory.fnx.z[i]], githubUrl: githubHistory.fnx.url[i] }); 
+                        fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i]]); 
                 });
-                fnxData3D.sort((a, b) => a.value[0] - b.value[0]);
+                fnxData3D.sort((a, b) => a[0] - b[0]);
     
                 let option = {
                     tooltip: { 
                         backgroundColor: 'var(--tt-bg)', borderColor: 'var(--tt-border)', borderWidth: 1, padding: [12, 16], borderRadius: 8, textStyle: { color: 'var(--tt-text)', fontSize: 13, fontFamily: 'Inter' }, 
                         formatter: function(params) { let time = new Date(params.value[0]).toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'}); let sColor = params.value[2] === 1 ? '#10b981' : '#ef4444'; return `<div style="font-weight:700; margin-bottom:8px; font-size:1.1em; color: #f59e0b;">⌚ ${time}</div><div style="display:flex; justify-content: space-between; gap:15px; margin-top:5px;"><div style="display:flex; align-items:center; gap:8px;"><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${sColor};"></span><span style="font-weight:600; color:${params.color}">${params.seriesName}</span></div><span style="font-weight:700; color:${sColor};">${params.value[2] === 1 ? 'PASS' : 'FAIL'}</span></div><div style="margin-top:10px; font-size:0.8rem; color:var(--accent-blue); text-align:center; border-top: 1px dashed var(--tt-border); padding-top:8px;">🖱️ Click block for Details</div>`; } 
                     },
-                    grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'right', rotateMouseButton: 'left' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
+                    // UPDATED 3D CONTROLS: Middle click to pan, Right click to rotate. Left click is now 100% free to just "click" objects.
+                    grid3D: { boxWidth: 200, boxDepth: 100, boxHeight: 80, environment: 'none', viewControl: { alpha: 20, beta: 30, distance: 300, panMouseButton: 'middle', rotateMouseButton: 'right' }, postEffect: { enable: true, bloom: { enable: true, bloomIntensity: 0.5 } }, light: { main: { intensity: 1.2, shadow: true }, ambient: { intensity: 0.3 } } },
                     
                     xAxis3D: { 
                         type: 'time', min: displayStart, max: displayEnd, name: 'Timeline', nameTextStyle: { color: '#f59e0b', fontSize: 14, fontWeight: 'bold' }, 
@@ -1042,7 +902,6 @@
                     yAxis3D: { 
                         type: 'value', min: -0.2, max: 2.2, splitNumber: 2, 
                         axisLabel: { 
-                            // Use rich text formatting to force colors in 3D WebGL
                             formatter: function (val) {
                                 if (val == 2) return '{fnx|FNX}';
                                 if (val == 1) return '{reg|Regression}';
@@ -1063,7 +922,6 @@
                     zAxis3D: { 
                         type: 'value', min: -0.2, max: 1.2, splitNumber: 1, 
                         axisLabel: { 
-                            // Also coloring PASS/FAIL labels using rich text!
                             formatter: function(val) {
                                 if (val == 1) return '{pass|PASS}';
                                 if (val == 0) return '{fail|FAIL}';
@@ -1079,10 +937,11 @@
                         axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
                     },
                     
+                    // UPDATED SYMBOL SIZES TO 18 FOR EASIER CLICKING
                     series: [ 
-                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 12, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, 
-                        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 12, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } },
-                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 12, symbol: 'triangle', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'FNX AI Test', type: 'line3D', data: fnxData3D, lineStyle: { width: 4, color: '#14b8a6' } } 
+                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 18, itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Smoke Monitoring', type: 'line3D', data: smokeData3D, lineStyle: { width: 4, color: '#0ea5e9' } }, 
+                        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 18, symbol: 'diamond', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'Regression Test', type: 'line3D', data: regData3D, lineStyle: { width: 4, color: '#8b5cf6' } },
+                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 18, symbol: 'triangle', itemStyle: { color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' } }, { name: 'FNX AI Test', type: 'line3D', data: fnxData3D, lineStyle: { width: 4, color: '#14b8a6' } } 
                     ]
                 }; eChartInstance.setOption(option);
             }
@@ -1090,13 +949,12 @@
 
             window.addEventListener('resize', () => { if(eChartInstance) eChartInstance.resize(); });
 
-async function startHistoryFetch() {
+            async function startHistoryFetch() {
                 try {
                     const hostname = window.location.hostname; 
                     
-                    // Allow local testing by falling back to your specific repo if not on github.io
-                    let owner = 'peoplesdoctor'; // Replace with your actual github owner name if needed
-                    let repo = 'clinic-monitoring'; // Replace with your actual repo name if needed
+                    let owner = 'peoplesdoctor'; 
+                    let repo = 'clinic-monitoring'; 
                     
                     if (hostname.includes('github.io')) {
                         owner = hostname.split('.')[0]; 
@@ -1111,8 +969,6 @@ async function startHistoryFetch() {
                         fetchPaginatedRuns(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/fnx_test.yml/runs?status=completed`, 2) 
                     ]);
                     
-                    // 🔥 FIX: ONLY clear the arrays if GitHub actually returned data!
-                    // This prevents wiping the screen blank if you hit the 60 req/hr API limit.
                     if (smokeRuns.length > 0 || regRuns.length > 0 || fnxRuns.length > 0) {
                         githubHistory = { 
                             smoke: {x:[], z:[], url:[]}, 
@@ -1159,25 +1015,22 @@ async function startHistoryFetch() {
                 const canvas = document.getElementById('bg-canvas'); 
                 scene = new THREE.Scene(); 
                 
-                // 1. ADD FOG: Blends the grid smoothly into the background CSS color
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 scene.fog = new THREE.FogExp2(isDark ? 0x020617 : 0xcddbe8, 0.012);
 
                 camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); 
                 
-                // 2. ENABLE ANTIALIAS: Smoothes out the jagged wireframe lines
                 renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true }); 
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 
-                // Made the grid wider and increased opacity (Fog makes it safe to be brighter)
                 planeMesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(300, 150, 60, 30), 
                     new THREE.MeshBasicMaterial({ 
                         color: 0x0ea5e9, 
                         wireframe: true, 
                         transparent: true, 
-                        opacity: isDark ? 0.35 : 0.25 // Much more visible now!
+                        opacity: isDark ? 0.35 : 0.25 
                     })
                 );
                 
@@ -1199,7 +1052,6 @@ async function startHistoryFetch() {
             window.update3DBackgroundTheme = function(theme) { 
                 if(typeof planeMesh !== 'undefined') {
                     planeMesh.material.opacity = theme === 'dark' ? 0.35 : 0.25; 
-                    // Dynamically update the fog color when toggling Light/Dark mode
                     if (scene.fog) scene.fog.color.setHex(theme === 'dark' ? 0x020617 : 0xcddbe8);
                 }
             };
@@ -1208,7 +1060,6 @@ async function startHistoryFetch() {
                 requestAnimationFrame(animate3D); 
                 if(typeof planeMesh === 'undefined') return; 
                 
-                // 3. SLOWER MOTION: Multiplier reduced from 0.0008 to 0.0003 for a "breathing" effect
                 const time = Date.now() * 0.0003; 
                 const position = planeMesh.geometry.attributes.position; 
                 
@@ -1216,12 +1067,10 @@ async function startHistoryFetch() {
                     const x = position.getX(i); 
                     const y = position.getY(i); 
                     
-                    // 4. BROADER WAVES: Multiplier reduced to 0.05, height increased to 6
                     position.setZ(i, Math.sin(x * 0.05 + time) * 6 + Math.cos(y * 0.05 + time) * 6); 
                 } 
                 position.needsUpdate = true; 
                 
-                // Removed the Z-axis rotation to keep it planted and grounded
                 renderer.render(scene, camera); 
             }
             
