@@ -901,8 +901,13 @@
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
                 eChartInstance.on('click', function (params) {
-                    let urlIndex = currentChartMode === '2d' ? 2 : 3; let statusIndex = currentChartMode === '2d' ? 1 : 2;
-                    let ts = params.value[0]; let status = params.value[statusIndex]; let url = params.value[urlIndex];
+                    // Grab status based on 2D vs 3D value arrays
+                    let ts = params.value[0]; 
+                    let status = currentChartMode === '2d' ? params.value[1] : params.value[2]; 
+                    
+                    // Prevent WebGL from breaking the URL string in 3D
+                    let url = currentChartMode === '2d' ? params.value[2] : params.data.githubUrl; 
+                    
                     let prefix, modalTitle;
                     
                     if (params.seriesName.includes('Smoke')) { prefix = 'smoke'; modalTitle = '💨 Smoke Monitoring'; } 
@@ -999,16 +1004,25 @@
                 let displayEnd = filterEndTime || new Date().getTime();
     
                 let smokeData3D = [];
-                githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], githubHistory.smoke.url[i]]); });
-                smokeData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.smoke.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        smokeData3D.push({ value: [d.getTime(), 0, githubHistory.smoke.z[i]], githubUrl: githubHistory.smoke.url[i] }); 
+                });
+                smokeData3D.sort((a, b) => a.value[0] - b.value[0]); 
 
                 let regData3D = [];
-                githubHistory.reg.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], githubHistory.reg.url[i]]); });
-                regData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.reg.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        regData3D.push({ value: [d.getTime(), 1, githubHistory.reg.z[i]], githubUrl: githubHistory.reg.url[i] }); 
+                });
+                regData3D.sort((a, b) => a.value[0] - b.value[0]); 
 
                 let fnxData3D = [];
-                githubHistory.fnx.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], githubHistory.fnx.url[i]]); });
-                fnxData3D.sort((a, b) => a[0] - b[0]); 
+                githubHistory.fnx.x.forEach((d, i) => { 
+                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                        fnxData3D.push({ value: [d.getTime(), 2, githubHistory.fnx.z[i]], githubUrl: githubHistory.fnx.url[i] }); 
+                });
+                fnxData3D.sort((a, b) => a.value[0] - b.value[0]);
     
                 let option = {
                     tooltip: { 
