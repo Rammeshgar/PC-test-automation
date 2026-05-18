@@ -860,28 +860,28 @@
                 let pointerColor = isDark ? '#0ea5e9' : '#0f172a'; 
                 
                 let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
-                let displayEnd = filterEndTime || new Date().getTime();
-    
-                let smokeData3D = [];
-                githubHistory.smoke.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        smokeData3D.push([d.getTime(), 0, githubHistory.smoke.z[i], i]); 
-                });
-                smokeData3D.sort((a, b) => a[0] - b[0]); 
-
-                let regData3D = [];
-                githubHistory.reg.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        regData3D.push([d.getTime(), 1, githubHistory.reg.z[i], i]); 
-                });
-                regData3D.sort((a, b) => a[0] - b[0]); 
-
-                let fnxData3D = [];
-                githubHistory.fnx.x.forEach((d, i) => { 
-                    if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
-                        fnxData3D.push([d.getTime(), 2, githubHistory.fnx.z[i], i]); 
-                });
-                fnxData3D.sort((a, b) => a[0] - b[0]);
+                    let displayEnd = filterEndTime || new Date().getTime();
+                
+                    let smokeData3D = [];
+                    githubHistory.smoke.x.forEach((d, i) => { 
+                        if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                            smokeData3D.push([d.getTime(), 'Smoke', githubHistory.smoke.z[i], i]); 
+                    });
+                    smokeData3D.sort((a, b) => a[0] - b[0]); 
+                
+                    let regData3D = [];
+                    githubHistory.reg.x.forEach((d, i) => { 
+                        if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                            regData3D.push([d.getTime(), 'Regression', githubHistory.reg.z[i], i]); 
+                    });
+                    regData3D.sort((a, b) => a[0] - b[0]); 
+                
+                    let fnxData3D = [];
+                    githubHistory.fnx.x.forEach((d, i) => { 
+                        if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
+                            fnxData3D.push([d.getTime(), 'FNX AI', githubHistory.fnx.z[i], i]); 
+                    });
+                    fnxData3D.sort((a, b) => a[0] - b[0]);
     
 let option = {
     tooltip: { 
@@ -915,12 +915,13 @@ let option = {
     },
     
     yAxis3D: { 
-        type: 'value', min: -0.5, max: 2.5, splitNumber: 2, 
+        type: 'category', /* <--- THIS FIXES THE HIT-BOX MATH */
+        data: ['Smoke', 'Regression', 'FNX AI'],
         axisLabel: { 
             formatter: function (val) {
-                if (val == 2) return '{fnx|FNX}';
-                if (val == 1) return '{reg|Regression}';
-                if (val == 0) return '{smoke|Smoke}';
+                if (val === 'FNX AI') return '{fnx|FNX}';
+                if (val === 'Regression') return '{reg|Regression}';
+                if (val === 'Smoke') return '{smoke|Smoke}';
                 return '';
             },
             rich: {
@@ -954,13 +955,13 @@ let option = {
     
     series: [ 
         { name: 'Smoke', type: 'scatter3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#0ea5e9', opacity: 0.6 } }, 
+        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1, color: '#0ea5e9', opacity: 0.5 } }, 
         
         { name: 'Regression', type: 'scatter3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Regression Line', type: 'line3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#8b5cf6', opacity: 0.6 } },
+        { name: 'Regression Line', type: 'line3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1, color: '#8b5cf6', opacity: 0.5 } },
         
         { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#14b8a6', opacity: 0.6 } } 
+        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1, color: '#14b8a6', opacity: 0.5 } } 
     ]
 }; 
 eChartInstance.setOption(option);
