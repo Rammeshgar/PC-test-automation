@@ -856,12 +856,10 @@
                 let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(15, 23, 42, 0.2)'; 
                 let wallColor = isDark ? 'rgba(14, 165, 233, 0.04)' : 'rgba(15, 23, 42, 0.05)';
-                let pointerColor = isDark ? '#0ea5e9' : '#0f172a'; 
                 
                 let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
                 let displayEnd = filterEndTime || new Date().getTime();
             
-                /* We changed the Y-coordinates to 10, 20, and 30 to move them away from the walls */
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
                     if (d.getTime() >= displayStart && d.getTime() <= displayEnd) 
@@ -895,15 +893,10 @@
                         } 
                     },
                     grid3D: { 
-                        boxWidth: 200, 
-                        boxDepth: 200, /* <--- Expanded to 200 to give the lanes breathing room */
-                        boxHeight: 80, 
-                        environment: 'none', 
+                        boxWidth: 200, boxDepth: 120, boxHeight: 80, environment: 'none', 
                         viewControl: { 
                             projection: 'perspective', 
-                            alpha: 20, 
-                            beta: 38,       /* <--- Turned the camera slightly to visually separate the hitboxes */
-                            distance: 340,  /* <--- Pulled the camera back so it fits nicely */
+                            alpha: 20, beta: 30, distance: 300, 
                             rotateMouseButton: 'left',
                             panMouseButton: 'right'
                         }, 
@@ -915,11 +908,12 @@
                         axisLabel: { formatter: function (value) { let d = new Date(value); let hrs = d.getHours(); return `${d.getMonth()+1}-${d.getDate()}\n${hrs % 12 || 12}:${d.getMinutes().toString().padStart(2, '0')} ${hrs >= 12 ? 'PM' : 'AM'}`; }, color: '#f59e0b', fontWeight: '600' }, 
                         splitLine: { lineStyle: { color: gridColor } },
                         splitArea: { show: true, areaStyle: { color: [wallColor, 'transparent'] } },
-                        axisPointer: { lineStyle: { color: pointerColor, width: 2 } }
+                        /* KILL THE INVISIBLE AXIS POINTER WALL */
+                        axisPointer: { show: false }
                     },
                     
                     yAxis3D: { 
-                        type: 'value', min: 0, max: 40, interval: 10, /* <--- Expanded the room so the dots are safe inside */
+                        type: 'value', min: 0, max: 40, interval: 10, 
                         axisLabel: { 
                             formatter: function (val) {
                                 if (val === 30) return '{fnx|FNX}';
@@ -935,7 +929,8 @@
                         }, 
                         splitLine: { lineStyle: { color: gridColor } },
                         splitArea: { show: true, areaStyle: { color: ['transparent', wallColor] } },
-                        axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
+                        /* KILL THE INVISIBLE AXIS POINTER WALL */
+                        axisPointer: { show: false }
                     },
                     
                     zAxis3D: { 
@@ -953,18 +948,20 @@
                         }, 
                         splitLine: { lineStyle: { color: gridColor } },
                         splitArea: { show: true, areaStyle: { color: [wallColor, 'transparent'] } },
-                        axisPointer: { label: { show: false }, lineStyle: { color: pointerColor, width: 2 } }
+                        /* KILL THE INVISIBLE AXIS POINTER WALL */
+                        axisPointer: { show: false }
                     },
                     
                     series: [ 
-                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+                        /* 1. ALL LINES FIRST (Draws them in the background so they can't block the mouse) */
                         { name: 'Smoke Line', type: 'line3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1.5, color: '#0ea5e9', opacity: 0.5 } }, 
-                        
-                        { name: 'Regression', type: 'scatter3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
                         { name: 'Regression Line', type: 'line3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1.5, color: '#8b5cf6', opacity: 0.5 } },
-                        
-                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-                        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1.5, color: '#14b8a6', opacity: 0.5 } } 
+                        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 1.5, color: '#14b8a6', opacity: 0.5 } },
+            
+                        /* 2. ALL DOTS LAST (Draws them strictly on top of the lines so your mouse hits them instantly) */
+                        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+                        { name: 'Regression', type: 'scatter3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+                        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } } 
                     ]
                 }; 
                 eChartInstance.setOption(option);
