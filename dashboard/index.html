@@ -751,7 +751,8 @@
                 const container = document.getElementById('historyChart');
                 
                 if (eChartInstance) { eChartInstance.dispose(); eChartInstance = null; } 
-                eChartInstance = echarts.init(container);
+                // Forces the hit-boxes to perfectly align with the visual dots
+                eChartInstance = echarts.init(container, null, { devicePixelRatio: 1 });
 
                 if (currentChartMode === '2d') { renderNeon2DECharts(); } else { renderMatrix3DECharts(); }
 
@@ -914,7 +915,7 @@ let option = {
     },
     
     yAxis3D: { 
-        type: 'value', min: -0.2, max: 2.2, splitNumber: 2, 
+        type: 'value', min: -0.5, max: 2.5, splitNumber: 2, 
         axisLabel: { 
             formatter: function (val) {
                 if (val == 2) return '{fnx|FNX}';
@@ -952,14 +953,14 @@ let option = {
     },
     
     series: [ 
-        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, silent: true, lineStyle: { width: 2, color: '#0ea5e9', opacity: 0.6 } }, 
+        { name: 'Smoke', type: 'scatter3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'Smoke Line', type: 'line3D', data: smokeData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#0ea5e9', opacity: 0.6 } }, 
         
-        { name: 'Regression', type: 'scatter3D', data: regData3D, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'Regression Line', type: 'line3D', data: regData3D, silent: true, lineStyle: { width: 2, color: '#8b5cf6', opacity: 0.6 } },
+        { name: 'Regression', type: 'scatter3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'diamond', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'Regression Line', type: 'line3D', data: regData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#8b5cf6', opacity: 0.6 } },
         
-        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
-        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, silent: true, lineStyle: { width: 2, color: '#14b8a6', opacity: 0.6 } } 
+        { name: 'FNX AI', type: 'scatter3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, symbolSize: 18, symbol: 'triangle', itemStyle: { opacity: 1, color: (params) => params.value[2] === 1 ? '#10b981' : '#ef4444' }, emphasis: { itemStyle: { borderColor: '#fff', borderWidth: 2 } } }, 
+        { name: 'FNX AI Line', type: 'line3D', data: fnxData3D, encode: { x: 0, y: 1, z: 2 }, silent: true, lineStyle: { width: 2, color: '#14b8a6', opacity: 0.6 } } 
     ]
 }; 
 eChartInstance.setOption(option);
