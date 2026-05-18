@@ -82,7 +82,7 @@ def run_regression():
                 "--use-fake-ui-for-media-stream",    # Auto-accepts permission popups
                 "--use-fake-device-for-media-stream" # Provides a fake video/audio feed
             ]
-        ) 
+        )
         
         # 2. Explicitly grant camera and microphone permissions to the context
         context = browser.new_context(
@@ -120,7 +120,7 @@ def run_regression():
                     time.sleep(2) 
             except Exception: pass
 
-            # --- PHASE 3: Start Consultation Directly ---
+# --- PHASE 3: Start Consultation Directly ---
             current_stage = "03_Start_Direct_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
@@ -138,30 +138,75 @@ def run_regression():
             print(f"   - Entering Patient Name: {full_patient_name}")
             print(f"   - Entering CPR: {cpr_first_six}-{cpr_last_four}")
             
-            # UPDATED: Single CPR Input field
+            # Fill the input fields
             cpr_input = page.get_by_placeholder(re.compile(r"CPR-Number|CPR-nummer", re.IGNORECASE)).first
             cpr_input.fill(full_cpr)
 
-            # UPDATED: Single Patient Name Input field
             name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientnavn", re.IGNORECASE)).first
             name_input.fill(full_patient_name, force=True)
             
-            # Press Escape to close any Mantine autocomplete dropdowns
             page.keyboard.press("Escape")
             page.wait_for_timeout(500)
             
+            # Define and click the Start button
             start_btn_regex = re.compile(r"Start (Consultation|Konsultation)", re.IGNORECASE)
             start_btn = page.get_by_role("button", name=start_btn_regex).last
             
             take_screenshot(page, current_stage, "before_click_start_consultation")
             start_btn.click()
-            take_screenshot(page, current_stage, "after_click_start_consultation")
             
+            # --- NEW UI UPDATE: Conditional Microphone Test Handling ---
+            print("   - Checking if the application requires a microphone test...")
+            
+            try:
+                # We give the modal 5 seconds to show up. 
+                mic_modal = page.get_by_role("dialog")
+                expect(mic_modal.get_by_text(re.compile(r"Select Your Microphone|Test Your Audio", re.IGNORECASE))).to_be_visible(timeout=5000)
+                
+                # IF WE GET HERE, THE MODAL EXISTS! We run our network bypass.
+                print("   - Modal detected! Injecting network mocks to bypass the audio test...")
+                
+                page.route("**/api/mic-check/transcribe", lambda route: route.fulfill(
+                    status=200, 
+                    json={"transcription": "This is a microphone test for the consultation notes."}
+                ))
+                
+                page.route("**/api/mic-check/verify", lambda route: route.fulfill(
+                    status=200, 
+                    json={"isMatch": True, "confidence": 0.99, "feedback": "Bypassed."} 
+                ))
+                
+                mic_action_btn = mic_modal.get_by_role("button", name=re.compile(r"Test Microphone", re.IGNORECASE)).first
+                mic_action_btn.click()
+                
+                print("   - Waiting for the recording timer to finish...")
+                countdown_text = mic_modal.get_by_text(re.compile(r"seconds remaining", re.IGNORECASE))
+                expect(countdown_text).to_be_hidden(timeout=45000)
+                
+                try:
+                    final_join_btn = mic_modal.get_by_role("button", name=re.compile(r"Continue|Join|Start", re.IGNORECASE)).last
+                    expect(final_join_btn).to_be_visible(timeout=5000)
+                    final_join_btn.click()
+                except Exception:
+                    pass
+                
+                page.unroute("**/api/mic-check/transcribe")
+                page.unroute("**/api/mic-check/verify")
+                take_screenshot(page, current_stage, "after_handling_mic_test")
+                
+            except AssertionError:
+                # IF WE GET HERE, THE MODAL NEVER SHOWED UP! The app skipped it.
+                print("   - ⏩ No microphone modal appeared! The app remembered our previous check.")
+            # ------------------------------------------------------------
+            
+            # Wait for the URL to change to the live consultation room
+            print("   - Waiting for redirect to live room...")
             live_page_url_pattern = re.compile(r"/consultation/live/(\d+)")
             expect(page).to_have_url(live_page_url_pattern, timeout=15000)
             consultation_id = live_page_url_pattern.search(page.url).group(1)
             
             print(f"   - SUCCESS: Consultation is LIVE with ID: {consultation_id}")
+            
 
             # --- PHASE 4: Inject Full WebM via API ---
             current_stage = "04_Inject_Audio"
