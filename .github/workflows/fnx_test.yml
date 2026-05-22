@@ -1,9 +1,8 @@
 name: FNX AI & Parser Test
 
 on:
-  workflow_dispatch: # Allows manual trigger button
+  workflow_dispatch: 
   schedule:
-    # Runs every 2 hours at 15 minutes past the hour (e.g., 2:15, 4:15, 6:15)
     - cron: '15 */2 * * *'
 
 permissions:
@@ -32,7 +31,7 @@ jobs:
 
       - name: Run FNX AI Test
         id: test-step
-        continue-on-error: true # Crucial: Don't stop workflow if test fails
+        continue-on-error: true 
         env:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
@@ -45,12 +44,25 @@ jobs:
           name: failed-fnx-screenshots
           path: monitor_screenshots_fnx/
 
-      # Email Alert Logic (Only sends between 04:00 and 16:00 UTC)
       - name: Get current time (UTC)
         if: steps.test-step.outcome == 'failure'
         id: time_check
         run: echo "hour=$(date -u +'%H')" >> $GITHUB_OUTPUT
 
+      # --- NEW STEP: Extract Error Message ---
+      - name: Extract Error Message
+        if: steps.test-step.outcome == 'failure'
+        run: |
+          echo "ERROR_DETAILS<<EOF" >> $GITHUB_ENV
+          if [ -f "error_summary_fnx.txt" ]; then
+            cat error_summary_fnx.txt >> $GITHUB_ENV
+          else
+            echo "Reason: Unknown error. Check GitHub logs." >> $GITHUB_ENV
+          fi
+          echo "" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      # --- UPDATED STEP: Include Error Details in Email ---
       - name: Send email with screenshots on failure
         if: steps.test-step.outcome == 'failure' && steps.time_check.outputs.hour >= 4 && steps.time_check.outputs.hour <= 16
         uses: dawidd6/action-send-mail@v3
@@ -63,6 +75,9 @@ jobs:
           body: |
             The FNX File Parser & AI Chatbot test has failed.
             
+            🛑 ERROR DETAILS:
+            ${{ env.ERROR_DETAILS }}
+            
             📊 View Live Dashboard: https://rammeshgar.github.io/PC-test-automation/
             
             ⚙️ View GitHub Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -72,14 +87,12 @@ jobs:
           from: GitHub Actions <${{ secrets.MAIL_SENDER_ADDRESS }}>
           attachments: monitor_screenshots_fnx/*.png
 
-      # --- DASHBOARD SYNC FOR FNX TEST ---
       - name: Generate Dashboard Data & Prepare Website
         if: always() 
         run: |
           STATUS="${{ steps.test-step.outcome }}"
           TIMESTAMP=$(date -u -Iseconds)
           
-          # Format screenshots as JSON array
           SCREENSHOTS="[]"
           if [ -d "monitor_screenshots_fnx" ]; then
             SCREENSHOTS=$(ls monitor_screenshots_fnx/*.png 2>/dev/null | awk 'BEGIN { ORS = ""; print "[" } { print "\""$0"\"", "," } END { print "]" }' | sed 's/,]/]/')
@@ -88,10 +101,8 @@ jobs:
 
           mkdir -p public_html
           
-          # Create fnx-data.json
           echo "{\"status\": \"$STATUS\", \"timestamp\": \"$TIMESTAMP\", \"screenshots\": $SCREENSHOTS}" > public_html/fnx-data.json
 
-          # Copy website files and screenshots
           cp -r dashboard/* public_html/ 2>/dev/null || true
           cp -r monitor_screenshots_fnx public_html/ 2>/dev/null || true
 
@@ -102,9 +113,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public_html
           publish_branch: gh-pages
-          keep_files: true # CRITICAL: Keeps Smoke and Regression data intact!
+          keep_files: true 
 
-      # MUST BE THE ABSOLUTE LAST STEP
       - name: Check test outcome and fail job if necessary
         if: steps.test-step.outcome == 'failure'
         run: exit 1
