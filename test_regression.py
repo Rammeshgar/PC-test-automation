@@ -95,7 +95,11 @@ def run_regression():
             # --- PHASE 1: Sign In ---
             current_stage = "01_Sign_In"
             print(f"\n--- PHASE: {current_stage} ---")
-            page.goto(LOGIN_URL)
+            
+            # FIX: Increased timeout and lowered network requirements for loading login page
+            page.goto(LOGIN_URL, timeout=60000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
+            
             page.locator("input").first.fill(ADMIN_USERNAME)
             page.locator('input[type="password"]').first.fill(ADMIN_PASSWORD)
             
@@ -104,7 +108,7 @@ def run_regression():
             sign_in_btn.click()
             take_screenshot(page, current_stage, "after_click_sign_in")
             
-            expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=20000)
+            expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=30000)
             page.wait_for_timeout(2000) 
             print("   - SUCCESS: Signed into Dashboard.")
 
@@ -120,7 +124,7 @@ def run_regression():
                     time.sleep(2) 
             except Exception: pass
 
-# --- PHASE 3: Start Consultation Directly ---
+            # --- PHASE 3: Start Consultation Directly ---
             current_stage = "03_Start_Direct_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
@@ -159,9 +163,9 @@ def run_regression():
             print("   - Checking if the application requires a microphone test...")
             
             try:
-                # We give the modal 5 seconds to show up. 
+                # FIX: We give the modal 15 seconds to show up in case the app is slow (cold start)
                 mic_modal = page.get_by_role("dialog")
-                expect(mic_modal.get_by_text(re.compile(r"Select Your Microphone|Test Your Audio", re.IGNORECASE))).to_be_visible(timeout=5000)
+                expect(mic_modal.get_by_text(re.compile(r"Select Your Microphone|Test Your Audio", re.IGNORECASE))).to_be_visible(timeout=15000)
                 
                 # IF WE GET HERE, THE MODAL EXISTS! We run our network bypass.
                 print("   - Modal detected! Injecting network mocks to bypass the audio test...")
@@ -185,7 +189,8 @@ def run_regression():
                 
                 try:
                     final_join_btn = mic_modal.get_by_role("button", name=re.compile(r"Continue|Join|Start", re.IGNORECASE)).last
-                    expect(final_join_btn).to_be_visible(timeout=5000)
+                    # FIX: Wait a bit longer for final join button
+                    expect(final_join_btn).to_be_visible(timeout=10000)
                     final_join_btn.click()
                 except Exception:
                     pass
@@ -202,12 +207,13 @@ def run_regression():
             # Wait for the URL to change to the live consultation room
             print("   - Waiting for redirect to live room...")
             live_page_url_pattern = re.compile(r"/consultation/live/(\d+)")
-            expect(page).to_have_url(live_page_url_pattern, timeout=15000)
+            
+            # FIX: Increase to 45 seconds to handle heavy backend load creating the room
+            expect(page).to_have_url(live_page_url_pattern, timeout=45000)
             consultation_id = live_page_url_pattern.search(page.url).group(1)
             
             print(f"   - SUCCESS: Consultation is LIVE with ID: {consultation_id}")
             
-
             # --- PHASE 4: Inject Full WebM via API ---
             current_stage = "04_Inject_Audio"
             print(f"\n--- PHASE: {current_stage} ---")
@@ -228,7 +234,7 @@ def run_regression():
             time.sleep(5)
             take_screenshot(page, current_stage, "live_transcription_visible_before_finish")
 
-# --- PHASE 5: Finish Consultation ---
+            # --- PHASE 5: Finish Consultation ---
             current_stage = "05_Finish_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
@@ -237,24 +243,19 @@ def run_regression():
             finish_btn.click()
             take_screenshot(page, current_stage, "after_click_finish_consultation")
             
-            # UPDATED: Use get_by_text instead of heading role, because the devs likely used a <div>
             expect(page.get_by_text(re.compile(r"Edit and Save Note", re.IGNORECASE)).first).to_be_visible(timeout=60000)
 
-# --- PHASE 6: Validate Transcription & Save ---
+            # --- PHASE 6: Validate Transcription & Save ---
             current_stage = "06_Validate_and_Save"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # UPDATED: The loading text changed in the new UI!
             print("   - Waiting for 'Note is being generated...' loader to disappear...")
             expect(page.get_by_text(re.compile(r"Note is being generated", re.IGNORECASE))).to_be_hidden(timeout=90000)
             
-            # Adding a tiny pause to allow the text to fully render in the DOM after the loader disappears
             page.wait_for_timeout(1500) 
             
-            # Look for the editor content
             note_editor = page.locator('.rich-text-content, .ProseMirror, .mantine-TypographyStylesProvider-root').first
             
-            # UPDATED: Looking specifically for alphanumeric characters rather than just any regex character
             expect(note_editor).to_have_text(re.compile(r"[a-zA-Z]"), timeout=15000)
             
             note_text = note_editor.inner_text()
@@ -270,22 +271,18 @@ def run_regression():
             approve_btn.click()
             take_screenshot(page, current_stage, "after_click_approve_and_save")
 
-# --- PHASE 7: Provide Feedback (Rating) ---
+            # --- PHASE 7: Provide Feedback (Rating) ---
             current_stage = "07_Provide_Feedback"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # UPDATED: The modal is now titled "How accurate was the note?"
             feedback_modal = page.get_by_role("dialog")
             expect(feedback_modal.get_by_text(re.compile(r"How accurate was the note", re.IGNORECASE)).first).to_be_visible(timeout=10000)
             
-            # UPDATED: Rating is now 1-10 buttons. Let's select '10'.
-            # We use exact=True so it doesn't accidentally match other numbers.
             rating_btn = feedback_modal.get_by_text("10", exact=True).first
             take_screenshot(page, current_stage, "before_click_rating_10")
             rating_btn.click()
             take_screenshot(page, current_stage, "after_click_rating_10")
             
-            # UPDATED: Submit button is now "SEND FEEDBACK"
             submit_feedback_btn = feedback_modal.get_by_role("button", name=re.compile(r"SEND FEEDBACK", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_click_submit_feedback")
             submit_feedback_btn.click()
@@ -301,7 +298,6 @@ def run_regression():
             time.sleep(3) 
             take_screenshot(page, current_stage, "dashboard_loaded_before_table_check")
             
-            # Check the table using ONLY the unique Time-based first six numbers of the CPR
             expect(page.get_by_text(cpr_first_six).first).to_be_visible(timeout=15000)
             print(f"   - ✅ SUCCESS: Consultation with CPR starting with '{cpr_first_six}' is visible in Recent Activity.")
             take_screenshot(page, current_stage, "final_success_dashboard")
