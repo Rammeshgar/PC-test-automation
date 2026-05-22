@@ -307,6 +307,16 @@ def run_regression():
 
         except Exception as e:
             print(f"\n--- ❌ ❌ ❌ TEST FAILED during stage: {current_stage} ❌ ❌ ❌ ---")
+            
+            # --- NEW: Save exact error reason to file for the email alert ---
+            try:
+                error_msg = f"Failed at Phase: {current_stage}\nReason: {type(e).__name__}: {str(e)}"
+                with open("error_summary.txt", "w", encoding="utf-8") as f:
+                    f.write(error_msg)
+            except:
+                pass
+            # ----------------------------------------------------------------
+
             if 'page' in locals():
                 take_screenshot(page, current_stage, "FAILED")
             time.sleep(10) 
