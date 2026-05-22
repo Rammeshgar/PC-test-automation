@@ -50,7 +50,10 @@ def run_smoke_test():
             # --- PHASE 1: Login ---
             current_stage = "01_Login"
             print(f"\n--- PHASE: {current_stage} ---")
-            page.goto(LOGIN_URL)
+            
+            # FIX: Increased timeout to 60 seconds and wait for DOM instead of network idle
+            page.goto(LOGIN_URL, timeout=60000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
             
             # Fill Credentials
             page.locator("input").first.fill(TEST_USERNAME)
@@ -67,7 +70,7 @@ def run_smoke_test():
             expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=20000)
             page.wait_for_timeout(2000) 
             
-            # UPDATED: Look for "Recent Consultations" based on the new UI
+            # Look for "Recent Consultations" based on the new UI
             expect(page.get_by_text(re.compile(r"Recent Consultations|Seneste Konsultationer", re.IGNORECASE)).first).to_be_visible(timeout=15000)
             
             take_screenshot(page, current_stage, "login_successful_on_dashboard")
@@ -77,7 +80,7 @@ def run_smoke_test():
             current_stage = "02_Logout"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # UPDATED: Logout is now directly accessible in the bottom left sidebar menu
+            # Logout is now directly accessible in the bottom left sidebar menu
             print("   - Clicking Logout in the sidebar...")
             logout_btn = page.get_by_text(re.compile(r"Logout|Log ud", re.IGNORECASE)).first
             expect(logout_btn).to_be_visible(timeout=5000)
@@ -96,6 +99,16 @@ def run_smoke_test():
 
     except Exception as e:
         print(f"\n--- ❌ TEST FAILED during stage: {current_stage} ❌ ---")
+        
+        # --- NEW: Save exact error reason to file for the email alert ---
+        try:
+            error_msg = f"Failed at Phase: {current_stage}\nReason: {type(e).__name__}: {str(e)}"
+            with open("error_summary_smoke.txt", "w", encoding="utf-8") as f:
+                f.write(error_msg)
+        except:
+            pass
+        # ----------------------------------------------------------------
+
         if page:
             try:
                 take_screenshot(page, current_stage, "FAILED")
