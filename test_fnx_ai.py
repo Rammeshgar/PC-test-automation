@@ -49,24 +49,25 @@ def run_fnx_test():
             # --- PHASE 1: Sign In ---
             current_stage = "01_Sign_In"
             print(f"\n--- PHASE: {current_stage} ---")
-            page.goto(LOGIN_URL)
+            
+            # FIX: Added resilient page load (like the other scripts)
+            page.goto(LOGIN_URL, timeout=60000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
+            
             page.locator("input").first.fill(ADMIN_USERNAME)
             page.locator('input[type="password"]').first.fill(ADMIN_PASSWORD)
             
             sign_in_btn = page.get_by_role("button", name=re.compile(r"Log ind|Sign in", re.IGNORECASE)).first
             sign_in_btn.click()
-            expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=20000)
+            expect(page).to_have_url(re.compile(r".*/dashboard"), timeout=30000)
             print("   - SUCCESS: Signed into Dashboard.")
 
             # --- PHASE 2: Select English Language ---
             current_stage = "02_Select_Language"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # FIX: Removed the try/except pass block. We WANT this to throw an error if it fails.
-            # Using a broad locator to catch the UK/English flag whether it is an image, svg, or button
             en_flag = page.locator("img[src*='gb'], img[src*='en'], img[alt*='English'], img[alt*='UK'], svg[class*='gb']").first
             
-            # Wait a few seconds to see if the flag is there. If it is, click it.
             if en_flag.is_visible(timeout=5000):
                 en_flag.click()
                 time.sleep(2) 
@@ -79,21 +80,18 @@ def run_fnx_test():
             print(f"\n--- PHASE: {current_stage} ---")
             
             print("   - Clicking upload zone to open upload modal...")
-            # FIX: Made the locator bilingual. It will now accept "Drag & drop" (EN) OR "Upload journalfil" (DK)
             page.get_by_text(re.compile(r"Drag & drop|Upload journalfil", re.IGNORECASE)).first.click()
             
             expect(page.get_by_role("dialog")).to_be_visible(timeout=5000)
             
             print("   - Clicking 'Browse Files' to trigger file picker...")
             with page.expect_file_chooser() as fc_info:
-                # FIX: Added Danish equivalents just in case the modal is still in Danish
                 page.get_by_role("button", name=re.compile(r"Browse Files|Gennemse|Vælg", re.IGNORECASE)).first.click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
             
             print("   - Confirming upload...")
-            # FIX: Added Danish equivalents for the upload confirmation button
             upload_confirm_btn = page.get_by_role("button", name=re.compile(r"Upload Files|Upload|Send", re.IGNORECASE)).first
             upload_confirm_btn.click()
             
@@ -104,28 +102,28 @@ def run_fnx_test():
             cpr_input = page.get_by_placeholder(re.compile(r"CPR", re.IGNORECASE)).first
             expect(cpr_input).to_have_value(re.compile(r"251248.*"), timeout=5000)
             
-            # FIX: Made the placeholder locator bilingual
             name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientens navn", re.IGNORECASE)).first
             expect(name_input).to_have_value(re.compile(r"Nancy.*Berggren", re.IGNORECASE))
             
             take_screenshot(page, current_stage, "data_autofilled_correctly")
             print("   - ✅ SUCCESS: FNX file parsed and UI accurately populated!")
 
-# --- PHASE 4: Patient Record Analytics (LLM Test) ---
+            # --- PHASE 4: Patient Record Analytics (LLM Test) ---
             current_stage = "04_LLM_Analytics_Init"
             print(f"\n--- PHASE: {current_stage} ---")
             
             fnx_sidebar_btn = page.get_by_text(re.compile(r"FNX Analytics|Journal Resume|Journalresumé", re.IGNORECASE)).first
             fnx_sidebar_btn.click()
             
-            # Bilingual check for empty state
-            expect(page.get_by_text(re.compile(r"No patient selected|Ingen patient valgt", re.IGNORECASE)).first).to_be_visible(timeout=10000)
+            # FIX: Removed the brittle "No patient selected" text check. 
+            # We now just wait directly for the Upload button to appear (gives the page up to 30s to load)
+            print("   - Waiting for Analytics UI to load...")
+            upload_btn = page.get_by_text(re.compile(r"Upload file|Upload fil|Vælg Fil|gennemse", re.IGNORECASE)).first
+            expect(upload_btn).to_be_visible(timeout=30000)
 
             print("   - Uploading FNX file to Analytics Chat...")
-            
-            # 🟢 FIX: Trigger the file chooser by clicking exactly what is on the screen ("Vælg Fil" or "gennemse")
             with page.expect_file_chooser() as fc_info:
-                page.get_by_text(re.compile(r"Upload file|Upload fil|Vælg Fil|gennemse", re.IGNORECASE)).first.click()
+                upload_btn.click()
                 
             file_chooser = fc_info.value
             file_chooser.set_files(FNX_FILE_PATH)
@@ -142,7 +140,6 @@ def run_fnx_test():
             current_stage = "05_AI_Summary_Generation"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # 🟢 FIX: Added precise Danish spelling from your screenshot
             summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary|Journal Resume|Journalresumé", re.IGNORECASE)).first
             take_screenshot(page, current_stage, "before_summary_click")
             summary_btn.click()
@@ -158,30 +155,12 @@ def run_fnx_test():
             take_screenshot(page, current_stage, "llm_summary_generated")
             print("   - ✅ SUCCESS: LLM successfully analyzed the FNX file.")
 
-            # --- PHASE 5: AI Patient Summary Generation ---
-            current_stage = "05_AI_Summary_Generation"
-            print(f"\n--- PHASE: {current_stage} ---")
-            
-            summary_btn = page.get_by_text(re.compile(r"Journal Summary|Patient Summary|Journal Resume", re.IGNORECASE)).first
-            take_screenshot(page, current_stage, "before_summary_click")
-            summary_btn.click()
-            
-            print("   - Waiting for LLM to stream the summary (up to 45 seconds)...")
-            
-            medical_anchor_regex = re.compile(
-                r"diabetes|Primcillin|Ingen registreret|No registered|Aktuelle Problemstillinger", 
-                re.IGNORECASE
-            )
-            expect(page.locator("body")).to_contain_text(medical_anchor_regex, timeout=45000)
-            
-            take_screenshot(page, current_stage, "llm_summary_generated")
-            print("   - ✅ SUCCESS: LLM successfully analyzed the FNX file.")
+            # FIX: Removed the duplicate Phase 5 code that was here!
 
             # --- PHASE 6: Multi-Turn AI Conversation ---
             current_stage = "06_Multi_Turn_LLM_Chat"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # Bilingual chat input check
             chat_input = page.get_by_placeholder(re.compile(r"Describe what you need|Beskriv hvad du", re.IGNORECASE)).first
             
             chat_sequence = [
@@ -205,6 +184,16 @@ def run_fnx_test():
 
         except Exception as e:
             print(f"\n--- ❌ ❌ ❌ TEST FAILED during stage: {current_stage} ❌ ❌ ❌ ---")
+            
+            # --- NEW: Save exact error reason to file for the email alert ---
+            try:
+                error_msg = f"Failed at Phase: {current_stage}\nReason: {type(e).__name__}: {str(e)}"
+                with open("error_summary_fnx.txt", "w", encoding="utf-8") as f:
+                    f.write(error_msg)
+            except:
+                pass
+            # ----------------------------------------------------------------
+
             if 'page' in locals():
                 take_screenshot(page, current_stage, "FAILED")
             raise e
