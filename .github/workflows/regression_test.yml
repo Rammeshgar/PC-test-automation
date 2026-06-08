@@ -75,9 +75,9 @@ jobs:
           server_port: ${{ secrets.MAIL_SERVER_PORT }}
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: '❌ FAILED: Hourly UI Regression Test'
+          subject: '❌ FAILED: Hourly UI/API Regression Test'
           body: |
-            The hourly UI Regression test has failed.
+            The hourly UI/API Regression test has failed.
             
             🛑 ERROR DETAILS:
             ${{ env.ERROR_DETAILS }}
