@@ -128,40 +128,15 @@ def run_regression():
             current_stage = "03_Start_Direct_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
-            # Generate Dynamic Patient Name
-            now = datetime.now(ZoneInfo("Europe/Budapest"))
-            dynamic_first_name = f"Auto{now.strftime('%H%M')}" 
-            dynamic_family_name = f"Test{now.strftime('%Y%m%d')}"
-            full_patient_name = f"{dynamic_first_name} {dynamic_family_name}"
-            
-            # Generate Dynamic CPR (10 digits)
-            cpr_first_six = now.strftime('%H%M%S') 
-            cpr_last_four = now.strftime('%d%m')
-            full_cpr = f"{cpr_first_six}-{cpr_last_four}"
-            
-            print(f"   - Entering Patient Name: {full_patient_name}")
-            print(f"   - Entering CPR: {full_cpr}")
-            
-            # Fill the input fields
-            cpr_input = page.get_by_placeholder(re.compile(r"CPR-Number|CPR-nummer", re.IGNORECASE)).first
-            cpr_input.fill(full_cpr)
-    
-            name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientnavn", re.IGNORECASE)).first
-            name_input.fill(full_patient_name)
-            
-            # Trigger validation
-            name_input.press("Tab")
-            page.wait_for_timeout(1000)
-            
-            # --- NEW UI UPDATE: DASHBOARD MIC CHECK ---
+            # --- 1. HANDLE MIC CHECK FIRST ---
             print("   - Checking if 'MIC CHECK' is required on the dashboard...")
             mic_check_btn = page.locator("text=MIC CHECK").first
             
             if mic_check_btn.is_visible():
-                print("   - 🎙️ 'MIC CHECK' detected! Clicking it to enable the Start button...")
+                print("   - 🎙️ 'MIC CHECK' detected! Clicking it before filling the form...")
                 mic_check_btn.click()
                 
-                # The Modal pops up here now
+                # The Modal pops up here
                 mic_modal = page.get_by_role("dialog")
                 expect(mic_modal).to_be_visible(timeout=15000)
                 
@@ -192,13 +167,40 @@ def run_regression():
                 page.unroute("**/api/mic-check/transcribe")
                 page.unroute("**/api/mic-check/verify")
                 expect(mic_modal).to_be_hidden(timeout=10000)
-                page.wait_for_timeout(1000) # Give the dashboard a second to enable the Start button
+                page.wait_for_timeout(1000) 
                 take_screenshot(page, current_stage, "after_handling_dashboard_mic_test")
             else:
                 print("   - ⏩ No 'MIC CHECK' visible! The app remembered our previous check.")
-            # ----------------------------------------------------------
-    
-            # Define and click the Start button
+
+            # --- 2. NOW FILL THE FORM (After Mic Check is done) ---
+            # Generate Dynamic Patient Name
+            now = datetime.now(ZoneInfo("Europe/Budapest"))
+            dynamic_first_name = f"Auto{now.strftime('%H%M')}" 
+            dynamic_family_name = f"Test{now.strftime('%Y%m%d')}"
+            full_patient_name = f"{dynamic_first_name} {dynamic_family_name}"
+            
+            # Generate Dynamic CPR (10 digits)
+            cpr_first_six = now.strftime('%H%M%S') 
+            cpr_last_four = now.strftime('%d%m')
+            full_cpr = f"{cpr_first_six}-{cpr_last_four}"
+            
+            print(f"   - Entering Patient Name: {full_patient_name}")
+            print(f"   - Entering CPR: {full_cpr}")
+            
+            # Use press_sequentially to ensure React captures the text
+            cpr_input = page.get_by_placeholder(re.compile(r"CPR-Number|CPR-nummer", re.IGNORECASE)).first
+            cpr_input.click()
+            cpr_input.press_sequentially(full_cpr, delay=50)
+
+            name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientnavn", re.IGNORECASE)).first
+            name_input.click()
+            name_input.press_sequentially(full_patient_name, delay=50)
+            
+            # Trigger validation
+            name_input.press("Tab")
+            page.wait_for_timeout(1000)
+            
+            # --- 3. CLICK START CONSULTATION ---
             start_btn_regex = re.compile(r"Start (Consultation|Konsultation)", re.IGNORECASE)
             start_btn = page.get_by_role("button", name=start_btn_regex).last
             
