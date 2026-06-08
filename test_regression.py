@@ -124,7 +124,7 @@ def run_regression():
                     time.sleep(2) 
             except Exception: pass
 
-            # --- PHASE 3: Start Consultation Directly ---
+# --- PHASE 3: Start Consultation Directly ---
             current_stage = "03_Start_Direct_Consultation"
             print(f"\n--- PHASE: {current_stage} ---")
             
@@ -137,49 +137,43 @@ def run_regression():
             # Generate Dynamic CPR (10 digits)
             cpr_first_six = now.strftime('%H%M%S') 
             cpr_last_four = now.strftime('%d%m')
-            full_cpr = f"{cpr_first_six}{cpr_last_four}"
+            full_cpr = f"{cpr_first_six}-{cpr_last_four}"
             
             print(f"   - Entering Patient Name: {full_patient_name}")
-            print(f"   - Entering CPR: {cpr_first_six}-{cpr_last_four}")
+            print(f"   - Entering CPR: {full_cpr}")
             
             # Fill the input fields
             cpr_input = page.get_by_placeholder(re.compile(r"CPR-Number|CPR-nummer", re.IGNORECASE)).first
             cpr_input.fill(full_cpr)
-
+    
             name_input = page.get_by_placeholder(re.compile(r"Patient Name|Patientnavn", re.IGNORECASE)).first
-            name_input.fill(full_patient_name, force=True)
+            name_input.fill(full_patient_name)
             
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(500)
+            # Trigger validation
+            name_input.press("Tab")
+            page.wait_for_timeout(1000)
             
-            # Define and click the Start button
-            start_btn_regex = re.compile(r"Start (Consultation|Konsultation)", re.IGNORECASE)
-            start_btn = page.get_by_role("button", name=start_btn_regex).last
+            # --- NEW UI UPDATE: DASHBOARD MIC CHECK ---
+            print("   - Checking if 'MIC CHECK' is required on the dashboard...")
+            mic_check_btn = page.locator("text=MIC CHECK").first
             
-            take_screenshot(page, current_stage, "before_click_start_consultation")
-            start_btn.click()
-            
-            # --- NEW UI UPDATE: Conditional Microphone Test Handling ---
-            print("   - Checking if the application requires a microphone test...")
-            
-            try:
-                # FIX: We give the modal 15 seconds to show up in case the app is slow (cold start)
+            if mic_check_btn.is_visible():
+                print("   - 🎙️ 'MIC CHECK' detected! Clicking it to enable the Start button...")
+                mic_check_btn.click()
+                
+                # The Modal pops up here now
                 mic_modal = page.get_by_role("dialog")
-                expect(mic_modal.get_by_text(re.compile(r"Select Your Microphone|Test Your Audio", re.IGNORECASE))).to_be_visible(timeout=15000)
+                expect(mic_modal).to_be_visible(timeout=15000)
                 
-                # IF WE GET HERE, THE MODAL EXISTS! We run our network bypass.
-                print("   - Modal detected! Injecting network mocks to bypass the audio test...")
-                
+                # Inject Network Mocks
                 page.route("**/api/mic-check/transcribe", lambda route: route.fulfill(
-                    status=200, 
-                    json={"transcription": "This is a microphone test for the consultation notes."}
+                    status=200, json={"transcription": "This is a microphone test."}
                 ))
-                
                 page.route("**/api/mic-check/verify", lambda route: route.fulfill(
-                    status=200, 
-                    json={"isMatch": True, "confidence": 0.99, "feedback": "Bypassed."} 
+                    status=200, json={"isMatch": True, "confidence": 0.99, "feedback": "Bypassed."} 
                 ))
                 
+                # Click "Test Microphone" in the modal
                 mic_action_btn = mic_modal.get_by_role("button", name=re.compile(r"Test Microphone", re.IGNORECASE)).first
                 mic_action_btn.click()
                 
@@ -188,27 +182,35 @@ def run_regression():
                 expect(countdown_text).to_be_hidden(timeout=45000)
                 
                 try:
-                    final_join_btn = mic_modal.get_by_role("button", name=re.compile(r"Continue|Join|Start", re.IGNORECASE)).last
-                    # FIX: Wait a bit longer for final join button
+                    final_join_btn = mic_modal.get_by_role("button", name=re.compile(r"Continue|Join|Done", re.IGNORECASE)).last
                     expect(final_join_btn).to_be_visible(timeout=10000)
                     final_join_btn.click()
                 except Exception:
                     pass
                 
+                # Cleanup routes and wait for modal to disappear
                 page.unroute("**/api/mic-check/transcribe")
                 page.unroute("**/api/mic-check/verify")
-                take_screenshot(page, current_stage, "after_handling_mic_test")
-                
-            except AssertionError:
-                # IF WE GET HERE, THE MODAL NEVER SHOWED UP! The app skipped it.
-                print("   - ⏩ No microphone modal appeared! The app remembered our previous check.")
-            # ------------------------------------------------------------
+                expect(mic_modal).to_be_hidden(timeout=10000)
+                page.wait_for_timeout(1000) # Give the dashboard a second to enable the Start button
+                take_screenshot(page, current_stage, "after_handling_dashboard_mic_test")
+            else:
+                print("   - ⏩ No 'MIC CHECK' visible! The app remembered our previous check.")
+            # ----------------------------------------------------------
+    
+            # Define and click the Start button
+            start_btn_regex = re.compile(r"Start (Consultation|Konsultation)", re.IGNORECASE)
+            start_btn = page.get_by_role("button", name=start_btn_regex).last
+            
+            take_screenshot(page, current_stage, "before_click_start_consultation")
+            
+            # Wait for the Start button to be fully enabled before clicking
+            expect(start_btn).to_be_enabled(timeout=15000)
+            start_btn.click()
             
             # Wait for the URL to change to the live consultation room
             print("   - Waiting for redirect to live room...")
             live_page_url_pattern = re.compile(r"/consultation/live/(\d+)")
-            
-            # FIX: Increase to 45 seconds to handle heavy backend load creating the room
             expect(page).to_have_url(live_page_url_pattern, timeout=45000)
             consultation_id = live_page_url_pattern.search(page.url).group(1)
             
