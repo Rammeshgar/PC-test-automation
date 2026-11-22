@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peoples Clinic Status Monitoring</title>
+    <title>Peoples Clinic Monitoring — Archived</title>
     <link rel="icon" type="image/png" href="favicon.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,6 +123,11 @@
         }
 
         .header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .archive-notice { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 10px 20px; border-bottom: 1px solid var(--card-border); background: var(--card-bg); color: var(--text-main); font-size: 0.9rem; line-height: 1.5; text-align: center; }
+        .archive-label { display: inline-block; border: 1px solid #b68b46; border-radius: 6px; padding: 3px 9px; background: #ffedc8; color: #573800; font-weight: 800; letter-spacing: .06em; }
+        [data-theme="dark"] .archive-label { background: #382a16; color: #ffe2a0; }
+        .archive-notice p { margin: 0; }
+        .status-badge .heartbeat-icon, .status-badge .hb-path, #global-led { animation: none !important; }
         .theme-toggle, .music-toggle { background: transparent; border: 2px solid var(--accent-blue); color: var(--text-main); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;}
         .theme-toggle:hover, .music-toggle:hover { background: var(--accent-blue); color: #fff; }
         .music-toggle.playing { background: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
@@ -336,16 +341,21 @@
     <canvas id="bg-canvas"></canvas>
 
     <header>
-        <a href="https://clinic.peoplesdoctor.ai" target="_blank" class="logo-container">
-            <img src="https://clinic.peoplesdoctor.ai/assets/images/peoples-doctor-logo-onboarding.png" alt="Peoples Doctor Logo">
-        </a>
-        <h1>Peoples Clinic Status Monitoring</h1>
+        <div class="logo-container">
+            <img src="./favicon.png" alt="Peoples Clinic historical project">
+        </div>
+        <h1>Peoples Clinic Monitoring — Archived</h1>
         
         <div class="header-controls">
             <button class="music-toggle" id="music-btn" onclick="toggleMusic()">🔇 Music Off</button>
             <button class="theme-toggle" id="theme-btn" onclick="toggleThemeManual()">☀️ Light Mode</button>
         </div>
     </header>
+
+    <aside class="archive-notice" aria-label="Archived monitoring notice">
+        <strong class="archive-label">ARCHIVED</strong>
+        <p>Monitoring ended in November 2026. Scheduled checks and alerts are disabled. Results below are historical records, not current service health.</p>
+    </aside>
 
     <div class="dashboard-layout">
         
@@ -362,10 +372,10 @@
                 </div>
                 <div id="smoke-status-badge" class="status-badge status-inactive">
                     <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="smoke-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
-                    <span id="smoke-status-text">Checking...</span>
+                    <span id="smoke-status-text">Loading record...</span>
                 </div>
                 <div class="meta">
-                    <p style="margin: 2px 0;"><strong>Checked:</strong> <span id="smoke-time">...</span></p>
+                    <p style="margin: 2px 0;"><strong>Last recorded:</strong> <span id="smoke-time">...</span></p>
                     <p style="margin: 2px 0;"><strong>Env:</strong> Production UI</p>
                 </div>
                 <div id="smoke-screenshots"></div>
@@ -385,10 +395,10 @@
                 </div>
                 <div id="regression-status-badge" class="status-badge status-inactive">
                     <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="regression-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
-                    <span id="regression-status-text">Checking...</span>
+                    <span id="regression-status-text">Loading record...</span>
                 </div>
                 <div class="meta">
-                    <p style="margin: 2px 0;"><strong>Checked:</strong> <span id="regression-time">...</span></p>
+                    <p style="margin: 2px 0;"><strong>Last recorded:</strong> <span id="regression-time">...</span></p>
                     <p style="margin: 2px 0;"><strong>Env:</strong> Prod UI & API</p>
                 </div>
                 <div id="regression-screenshots"></div>
@@ -407,10 +417,10 @@
                 </div>
                 <div id="fnx-status-badge" class="status-badge status-inactive">
                     <svg class="heartbeat-icon" viewBox="0 0 100 30"><path id="fnx-hb" class="hb-path" d="M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15"></path></svg>
-                    <span id="fnx-status-text">Checking...</span>
+                    <span id="fnx-status-text">Loading record...</span>
                 </div>
                 <div class="meta">
-                    <p style="margin: 2px 0;"><strong>Checked:</strong> <span id="fnx-time">...</span></p>
+                    <p style="margin: 2px 0;"><strong>Last recorded:</strong> <span id="fnx-time">...</span></p>
                     <p style="margin: 2px 0;"><strong>Env:</strong> Prod UI & LLM Engine</p>
                 </div>
                 <div id="fnx-screenshots"></div>
@@ -418,15 +428,15 @@
 
             <div class="global-status-widget">
                 <div class="status-led" id="global-led"></div>
-                <span id="global-text" style="color:var(--text-main);">Analyzing...</span>
+                <span id="global-text" style="color:var(--text-main);">Archived · Monitoring stopped</span>
             </div>
         </div>
 
         <div class="chart-section">
             <div class="title-wrapper">
                 <div class="title-left">
-                    <h2>📊 Live Global Stability Matrix</h2>
-                    <div class="info-icon">i<span class="tooltip">View historical stability. Defaults to 24hrs. Click on any data dot to view detailed logs and screenshots!</span></div>
+                    <h2>📊 Historical Stability Matrix</h2>
+                    <div class="info-icon">i<span class="tooltip">View recorded stability. The default window ends at the last archived run. Click a data dot to see its recorded evidence.</span></div>
                 </div>
                 <div class="chart-toggles">
                     <input type="date" id="start-date" class="date-picker" title="Start Date" />
@@ -500,7 +510,6 @@
             reg: {x:[], z:[], url:[]}, 
             fnx: {x:[], z:[], url:[]} 
         };
-        let globalState = { smoke: 'inactive', regression: 'inactive', fnx: 'inactive' };
         
         let filterStartTime = null; 
         let filterEndTime = null;
@@ -548,66 +557,50 @@
             applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); 
         }
 
-        function updateGlobalStatus() {
-            const txt = document.getElementById('global-text'); 
-            const led = document.getElementById('global-led');
-            
-            if (globalState.smoke === 'failure' || globalState.regression === 'failure' || globalState.fnx === 'failure') {
-                txt.innerHTML = 'System Status: <span style="color:var(--fail-color)">Degraded</span>'; 
-                led.className = 'status-led led-fail';
-            } else if (globalState.smoke === 'success' || globalState.regression === 'success' || globalState.fnx === 'success') {
-                txt.innerHTML = 'System Status: <span style="color:var(--pass-color)">All Operational</span>'; 
-                led.className = 'status-led led-pass';
-            } else {
-                txt.innerHTML = 'System Status: <span style="color:var(--inactive-color)">Paused</span>'; 
-                led.className = 'status-led';
-            }
+        function archiveEndTime() {
+            const runTimes = Object.values(githubHistory).flatMap(series => series.x.map(date => date.getTime()));
+            const savedTimes = Object.values(latestRunData).map(run => new Date(run?.timestamp).getTime());
+            const times = [...runTimes, ...savedTimes].filter(Number.isFinite);
+            return times.length ? Math.max(...times) : Date.parse('2026-11-22T23:59:59+01:00');
         }
 
-        async function loadLiveData(testName, cardPrefix, inactiveThresholdMinutes) {
+        async function loadArchivedData(testName, cardPrefix) {
             const textEl = document.getElementById(`${cardPrefix}-status-text`);
             const badgeEl = document.getElementById(`${cardPrefix}-status-badge`);
             const imgContainer = document.getElementById(`${cardPrefix}-screenshots`);
             const pathEl = document.getElementById(`${cardPrefix}-hb`);
             
             try {
-                const response = await fetch(`./${testName}-data.json?t=${new Date().getTime()}`, { cache: "no-store" });
+                const response = await fetch(`./${testName}-data.json`);
                 if (!response.ok) throw new Error("Not Found");
                 
                 const data = await response.json();
                 latestRunData[cardPrefix] = data; 
                 
                 const testTime = new Date(data.timestamp);
-                document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString([], {month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'});
-
-                if (((new Date() - testTime) / 60000) > inactiveThresholdMinutes) {
-                    badgeEl.className = 'status-badge status-inactive'; 
-                    textEl.innerText = 'PAUSED';
-                    pathEl.setAttribute('d', 'M0 15 L100 15');
-                    imgContainer.innerHTML = '<div class="no-failures" style="color:var(--text-muted); border-color:var(--text-muted)">Monitor paused.</div>';
-                    globalState[testName] = 'inactive';
-                } else {
-                    globalState[testName] = data.status;
-                    if (data.status === 'success') {
-                        badgeEl.className = 'status-badge status-passed'; 
-                        textEl.innerText = 'PASSING';
-                        pathEl.setAttribute('d', 'M0 15 L20 15 L25 5 L35 28 L45 2 L55 22 L60 15 L100 15');
-                        imgContainer.innerHTML = '<div class="no-failures">✅ Systems healthy. No alerts.</div>';
+                document.getElementById(`${cardPrefix}-time`).innerText = testTime.toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour: '2-digit', minute:'2-digit'});
+                pathEl.setAttribute('d', 'M0 15 L100 15');
+                if (data.status === 'success') {
+                    badgeEl.className = 'status-badge status-passed';
+                    textEl.innerText = 'LAST RUN PASSED';
+                    imgContainer.innerHTML = '<div class="no-failures">Recorded check passed.</div>';
+                } else if (data.status === 'failure') {
+                    badgeEl.className = 'status-badge status-failed';
+                    textEl.innerText = 'LAST RUN FAILED';
+                    if (data.screenshots && data.screenshots.length > 0) {
+                        const lastImg = data.screenshots[data.screenshots.length - 1];
+                        imgContainer.innerHTML = `<div class="screenshot-container"><img src="${lastImg}" class="screenshot" alt="Recorded failure" onclick="window.open('${lastImg}', '_blank')"></div>`;
                     } else {
-                        badgeEl.className = 'status-badge status-failed'; 
-                        textEl.innerText = 'FAILING';
-                        pathEl.setAttribute('d', 'M0 15 L10 5 L20 25 L30 2 L40 28 L50 5 L60 25 L70 2 L80 28 L90 5 L100 15');
-                        if (data.screenshots && data.screenshots.length > 0) {
-                            const lastImg = data.screenshots[data.screenshots.length - 1];
-                            imgContainer.innerHTML = `<div class="screenshot-container"><img src="${lastImg}" class="screenshot" alt="Failure" onclick="window.open('${lastImg}', '_blank')"></div>`;
-                        }
+                        imgContainer.textContent = 'Recorded check failed; no screenshot saved.';
                     }
+                } else {
+                    badgeEl.className = 'status-badge status-inactive';
+                    textEl.innerText = 'NO RECORDED RESULT';
                 }
             } catch (e) {
                 badgeEl.className = 'status-badge status-inactive'; 
-                textEl.innerText = 'DATA ERROR';
+                textEl.innerText = 'RECORD UNAVAILABLE';
             }
-            updateGlobalStatus();
         }
 
         async function fetchPaginatedRuns(baseUrl, maxPages) {
@@ -666,7 +659,7 @@
                 let sT = s ? new Date(s.split('-')[0], s.split('-')[1] - 1, s.split('-')[2], 0, 0, 0).getTime() : null;
                 let eT = e ? new Date(e.split('-')[0], e.split('-')[1] - 1, e.split('-')[2], 23, 59, 59, 999).getTime() : null;
                 
-                if (sT && !eT) eT = new Date().getTime(); 
+                if (sT && !eT) eT = archiveEndTime();
                 if (!sT && eT) sT = eT - (86400000); 
                 
                 filterStartTime = sT; filterEndTime = eT;
@@ -677,7 +670,7 @@
 
         function renderTable() {
             let displayStart = filterStartTime || 0; 
-            let displayEnd = filterEndTime || new Date().getTime();
+            let displayEnd = filterEndTime || archiveEndTime();
             let combinedData = [];
             
             githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) combinedData.push({ type: '💨 10-Min Smoke Test', time: d.getTime(), status: githubHistory.smoke.z[i], url: githubHistory.smoke.url[i], color: '#0ea5e9' }); });
@@ -704,7 +697,7 @@
 
         function exportData() {
             let displayStart = filterStartTime || 0; 
-            let displayEnd = filterEndTime || new Date().getTime();
+            let displayEnd = filterEndTime || archiveEndTime();
             let combinedData = [];
             
             githubHistory.smoke.x.forEach((d, i) => { if (d.getTime() >= displayStart && d.getTime() <= displayEnd) combinedData.push({ type: 'Smoke Monitoring', time: d.getTime(), status: githubHistory.smoke.z[i] === 1 ? 'PASS' : 'FAIL', url: githubHistory.smoke.url[i] }); });
@@ -739,9 +732,9 @@
             const bgMusic = document.getElementById('25 12 2021');
             if(bgMusic) bgMusic.volume = 0.05; 
             
-            loadLiveData('smoke', 'smoke', 120);
-            loadLiveData('regression', 'regression', 180);
-            loadLiveData('fnx', 'fnx', 240); 
+            loadArchivedData('smoke', 'smoke');
+            loadArchivedData('regression', 'regression');
+            loadArchivedData('fnx', 'fnx');
             
             document.getElementById('start-date').addEventListener('change', applyDateFilter);
             document.getElementById('end-date').addEventListener('change', applyDateFilter);
@@ -780,7 +773,7 @@
                     let url = githubHistory[historyKey].url[originalIndex];
                     
                     document.getElementById('modal-title').innerText = modalTitle;
-                    document.getElementById('modal-status').innerText = status === 1 ? '✅ PASSING' : '❌ FAILED';
+                    document.getElementById('modal-status').innerText = status === 1 ? '✅ RECORDED PASS' : '❌ RECORDED FAIL';
                     document.getElementById('modal-status').style.color = status === 1 ? 'var(--pass-color)' : 'var(--fail-color)';
                     document.getElementById('modal-time').innerText = new Date(exactTs).toLocaleString();
                     document.getElementById('modal-github-link').href = url;
@@ -809,7 +802,8 @@
                 let smokeData = githubHistory.smoke.x.map((d, i) => [d.getTime(), githubHistory.smoke.z[i], githubHistory.smoke.url[i], i]);
                 let regData = githubHistory.reg.x.map((d, i) => [d.getTime(), githubHistory.reg.z[i], githubHistory.reg.url[i], i]);
                 let fnxData = githubHistory.fnx.x.map((d, i) => [d.getTime(), githubHistory.fnx.z[i], githubHistory.fnx.url[i], i]);
-                let displayStart = filterStartTime || (new Date().getTime() - 86400000); let displayEnd = filterEndTime || new Date().getTime();
+                let displayEnd = filterEndTime || archiveEndTime();
+                let displayStart = filterStartTime || (displayEnd - 86400000);
 
                 eChartInstance.setOption({
                     tooltip: { 
@@ -857,8 +851,8 @@
                 let gridColor = isDark ? 'rgba(14, 165, 233, 0.25)' : 'rgba(15, 23, 42, 0.2)'; 
                 let wallColor = isDark ? 'rgba(14, 165, 233, 0.04)' : 'rgba(15, 23, 42, 0.05)';
                 
-                let displayStart = filterStartTime || (new Date().getTime() - (24 * 60 * 60 * 1000));
-                let displayEnd = filterEndTime || new Date().getTime();
+                let displayEnd = filterEndTime || archiveEndTime();
+                let displayStart = filterStartTime || (displayEnd - 24 * 60 * 60 * 1000);
             
                 let smokeData3D = [];
                 githubHistory.smoke.x.forEach((d, i) => { 
@@ -972,15 +966,9 @@
 
             async function startHistoryFetch() {
                 try {
-                    const hostname = window.location.hostname; 
-                    
-                    let owner = 'peoplesdoctor'; 
-                    let repo = 'clinic-monitoring'; 
-                    
-                    if (hostname.includes('github.io')) {
-                        owner = hostname.split('.')[0]; 
-                        repo = window.location.pathname.split('/').filter(Boolean)[0] || '';
-                    }
+                    // Read only this personal repository's completed historical runs.
+                    const owner = 'Rammeshgar';
+                    const repo = 'PC-test-automation';
 
                     console.log(`Fetching data from: ${owner}/${repo}...`);
                     
@@ -1012,12 +1000,6 @@
             }
             startHistoryFetch();
             
-            setInterval(() => {
-                loadLiveData('smoke', 'smoke', 120);
-                loadLiveData('regression', 'regression', 180);
-                loadLiveData('fnx', 'fnx', 240);
-                startHistoryFetch();
-            }, 300000); 
 
             document.getElementById('history-modal').addEventListener('click', function(e) {
                 if (e.target === this) {
